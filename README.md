@@ -3,7 +3,7 @@
 > Centralized governance, reusable workflows, and compliance standards for Clinical/Personal Therapy Companion projects.
 
 [![CI](https://github.com/mgmacri/OP_Client-Companion-Governance/actions/workflows/ci.yml/badge.svg)](https://github.com/mgmacri/OP_Client-Companion-Governance/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 ---
 
@@ -83,6 +83,8 @@ OP_Client-Companion-Governance/
 ## 🚀 Quick Start
 
 ### 1. Call Reusable Workflows from Your App Repo
+
+For a step-by-step walkthrough, see [docs/INTEGRATION-GUIDE.md](docs/INTEGRATION-GUIDE.md).
 
 Create thin wrapper workflows in your app repository:
 
@@ -325,7 +327,7 @@ All actions are logged with:
 
 ## 📝 License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License - See [LICENSE.md](LICENSE.md) for details.
 
 ---
 

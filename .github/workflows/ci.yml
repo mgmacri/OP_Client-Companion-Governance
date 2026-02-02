@@ -7,7 +7,7 @@
 # Usage from app repo:
 #   jobs:
 #     ci:
-#       uses: ORG/owl-governance/.github/workflows/ci.yml@main
+#       uses: mgmacri/OP_Client-Companion-Governance/.github/workflows/ci.yml@main
 #       with:
 #         node-version: "20"
 #         working-directory: "app/client-companion"

@@ -71,7 +71,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node + pnpm
-        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        uses: mgmacri/OP_Client-Companion-Governance/.github/actions/setup-node-pnpm@main
         with:
           node-version: ${{ inputs.node-version }}
           pnpm-version: ${{ inputs.pnpm-version }}
@@ -99,7 +99,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node + pnpm
-        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        uses: mgmacri/OP_Client-Companion-Governance/.github/actions/setup-node-pnpm@main
         with:
           node-version: ${{ inputs.node-version }}
           pnpm-version: ${{ inputs.pnpm-version }}
@@ -132,7 +132,7 @@ jobs:
           persist-credentials: false
 
       - name: Run security scan
-        uses: ORG/owl-governance/.github/actions/security-scan@main
+        uses: mgmacri/OP_Client-Companion-Governance/.github/actions/security-scan@main
         with:
           working-directory: ${{ inputs.working-directory }}
           fail-on-findings: ${{ inputs.fail-on-compliance-violation }}
@@ -153,7 +153,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node + pnpm
-        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        uses: mgmacri/OP_Client-Companion-Governance/.github/actions/setup-node-pnpm@main
         with:
           node-version: ${{ inputs.node-version }}
           pnpm-version: ${{ inputs.pnpm-version }}
