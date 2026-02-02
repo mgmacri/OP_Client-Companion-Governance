@@ -1,0 +1,106 @@
+# =============================================================================
+# COMPOSITE ACTION: Setup Node + pnpm
+# =============================================================================
+# Standardized Node.js and pnpm setup with caching for all workflows.
+# Ensures consistent tooling across the organization.
+# =============================================================================
+
+name: Setup Node + pnpm
+description: |
+  Composite action to set up Node.js and pnpm with proper caching.
+  Used by all CI workflows for consistent environment setup.
+
+inputs:
+  node-version:
+    description: "Node.js version to install"
+    required: false
+    default: "20"
+  pnpm-version:
+    description: "pnpm version to install"
+    required: false
+    default: "9"
+  working-directory:
+    description: "Working directory containing package.json"
+    required: false
+    default: "."
+  registry-url:
+    description: "Optional npm registry URL"
+    required: false
+    default: ""
+
+outputs:
+  node-version:
+    description: "Installed Node.js version"
+    value: ${{ steps.setup-node.outputs.node-version }}
+  pnpm-version:
+    description: "Installed pnpm version"
+    value: ${{ steps.setup-pnpm.outputs.version }}
+  cache-hit:
+    description: "Whether the cache was hit"
+    value: ${{ steps.setup-node-cached.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    # -------------------------------------------------------------------------
+    # Step 1: Setup Node.js (initial, no cache)
+    # -------------------------------------------------------------------------
+    - name: Setup Node.js
+      id: setup-node
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+
+    # -------------------------------------------------------------------------
+    # Step 2: Setup pnpm
+    # -------------------------------------------------------------------------
+    - name: Setup pnpm
+      id: setup-pnpm
+      uses: pnpm/action-setup@fe02b34f77f8bc703c70f43f2f5c4ad23e239937 # v4.0.0
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
+
+    # -------------------------------------------------------------------------
+    # Step 3: Get pnpm store directory
+    # -------------------------------------------------------------------------
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    # -------------------------------------------------------------------------
+    # Step 4: Setup pnpm cache
+    # -------------------------------------------------------------------------
+    - name: Setup pnpm cache
+      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    # -------------------------------------------------------------------------
+    # Step 5: Re-setup Node.js with pnpm caching enabled
+    # -------------------------------------------------------------------------
+    - name: Setup Node.js (with pnpm cache)
+      id: setup-node-cached
+      uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.working-directory }}/pnpm-lock.yaml
+
+    # -------------------------------------------------------------------------
+    # Step 6: Verify installation
+    # -------------------------------------------------------------------------
+    - name: Verify installation
+      shell: bash
+      run: |
+        echo "::group::Environment Verification"
+        echo "Node.js version: $(node --version)"
+        echo "pnpm version: $(pnpm --version)"
+        echo "Working directory: ${{ inputs.working-directory }}"
+        echo "::endgroup::"

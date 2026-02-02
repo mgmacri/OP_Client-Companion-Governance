@@ -1,0 +1,227 @@
+# =============================================================================
+# REUSABLE WORKFLOW: PR Check
+# =============================================================================
+# Called by consuming repos to enforce PR quality gates before merge.
+# Includes: lint, test, security scan, compliance checks.
+#
+# Usage from app repo:
+#   jobs:
+#     pr-check:
+#       uses: mgmacri/OP_Client-Companion-Governance/.github/workflows/pr-check.yml@main
+#       with:
+#         node-version: "20"
+#         working-directory: "app/client-companion"
+# =============================================================================
+
+name: PR Check (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "20"
+      pnpm-version:
+        description: "pnpm version to use"
+        required: false
+        type: string
+        default: "9"
+      working-directory:
+        description: "Working directory for the app"
+        required: false
+        type: string
+        default: "."
+      run-security-scan:
+        description: "Enable security scanning"
+        required: false
+        type: boolean
+        default: true
+      fail-on-compliance-violation:
+        description: "Fail workflow on compliance violations"
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      # OIDC-based; no static secrets stored
+      GITHUB_TOKEN:
+        description: "GitHub token for API access (auto-provided)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+
+  # ---------------------------------------------------------------------------
+  # Test
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test -- --ci --coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: coverage-report
+          path: ${{ inputs.working-directory }}/coverage
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Security Scan
+  # ---------------------------------------------------------------------------
+  security-scan:
+    name: Security Scan
+    if: ${{ inputs.run-security-scan }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Run security scan
+        uses: ORG/owl-governance/.github/actions/security-scan@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          fail-on-findings: ${{ inputs.fail-on-compliance-violation }}
+
+  # ---------------------------------------------------------------------------
+  # Compliance Check
+  # ---------------------------------------------------------------------------
+  compliance:
+    name: Compliance Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate UTC timestamps
+        run: |
+          echo "::group::Checking for non-UTC timestamp patterns"
+          # Fail if any new Date() without UTC conversion or .toISOString() found
+          ! grep -rn "new Date()" --include="*.ts" --include="*.tsx" \
+            | grep -v "toISOString" \
+            | grep -v "// @timestamp-exempt" \
+            | grep -v "test" \
+            | grep -v "spec" \
+            && echo "✅ No non-UTC timestamp violations found" \
+            || (echo "❌ UTC timestamp violation detected" && exit 1)
+          echo "::endgroup::"
+
+      - name: Validate deterministic outputs
+        run: |
+          echo "::group::Checking for non-deterministic patterns"
+          # Fail if Math.random() or Date.now() used outside test files
+          ! grep -rn "Math\.random()\|Date\.now()" --include="*.ts" --include="*.tsx" \
+            | grep -v "test" \
+            | grep -v "spec" \
+            | grep -v "// @random-exempt" \
+            && echo "✅ No non-deterministic pattern violations found" \
+            || (echo "❌ Non-deterministic pattern detected" && exit 1)
+          echo "::endgroup::"
+
+      - name: Validate consent gates
+        run: |
+          echo "::group::Checking consent gate enforcement"
+          # Ensure ConsentGate component is used on submission paths
+          if grep -rn "handleSubmit\|onSubmit" --include="*.tsx" | grep -v "ConsentGate" | grep -v "test" | grep -v "spec" > /dev/null 2>&1; then
+            echo "⚠️ Warning: Submission handlers found without ConsentGate reference"
+          fi
+          echo "✅ Consent gate check complete"
+          echo "::endgroup::"
+
+  # ---------------------------------------------------------------------------
+  # Summary Gate
+  # ---------------------------------------------------------------------------
+  summary:
+    name: PR Check Summary
+    needs: [lint, test, security-scan, compliance]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" ]]; then
+            echo "❌ Lint failed"
+            exit 1
+          fi
+          if [[ "${{ needs.test.result }}" != "success" ]]; then
+            echo "❌ Tests failed"
+            exit 1
+          fi
+          if [[ "${{ needs.security-scan.result }}" == "failure" ]]; then
+            echo "❌ Security scan failed"
+            exit 1
+          fi
+          if [[ "${{ needs.compliance.result }}" != "success" ]]; then
+            echo "❌ Compliance check failed"
+            exit 1
+          fi
+          echo "✅ All PR checks passed"

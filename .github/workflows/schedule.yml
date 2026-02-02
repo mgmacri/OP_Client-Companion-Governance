@@ -1,0 +1,272 @@
+# =============================================================================
+# REUSABLE WORKFLOW: Scheduled Maintenance
+# =============================================================================
+# Called by consuming repos for scheduled security/dependency checks.
+# Runs dependency audits, stale issue cleanup, and compliance scans.
+#
+# Usage from app repo:
+#   on:
+#     schedule:
+#       - cron: '0 6 * * 1'  # Weekly Monday 6am UTC
+#   jobs:
+#     maintenance:
+#       uses: mgmacri/OP_Client-Companion-Governance/.github/workflows/schedule.yml@main
+#       with:
+#         run-dependency-audit: true
+#         run-stale-cleanup: true
+# =============================================================================
+
+name: Scheduled Maintenance (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "20"
+      pnpm-version:
+        description: "pnpm version to use"
+        required: false
+        type: string
+        default: "9"
+      working-directory:
+        description: "Working directory for the app"
+        required: false
+        type: string
+        default: "."
+      run-dependency-audit:
+        description: "Run npm/pnpm audit for vulnerabilities"
+        required: false
+        type: boolean
+        default: true
+      run-stale-cleanup:
+        description: "Close stale issues and PRs"
+        required: false
+        type: boolean
+        default: true
+      run-license-check:
+        description: "Validate dependency licenses"
+        required: false
+        type: boolean
+        default: true
+      stale-days-before-stale:
+        description: "Days before marking issue/PR as stale"
+        required: false
+        type: number
+        default: 60
+      stale-days-before-close:
+        description: "Days before closing stale issue/PR"
+        required: false
+        type: number
+        default: 14
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Dependency Audit
+  # ---------------------------------------------------------------------------
+  dependency-audit:
+    name: Dependency Audit
+    if: ${{ inputs.run-dependency-audit }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run pnpm audit
+        id: audit
+        run: |
+          echo "::group::Dependency Audit Results"
+          pnpm audit --audit-level=moderate 2>&1 | tee audit-results.txt || true
+          
+          # Check for high/critical vulnerabilities
+          if grep -q "high\|critical" audit-results.txt; then
+            echo "has-vulnerabilities=true" >> "$GITHUB_OUTPUT"
+            echo "❌ High or critical vulnerabilities found"
+          else
+            echo "has-vulnerabilities=false" >> "$GITHUB_OUTPUT"
+            echo "✅ No high/critical vulnerabilities"
+          fi
+          echo "::endgroup::"
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: dependency-audit
+          path: ${{ inputs.working-directory }}/audit-results.txt
+          retention-days: 90
+
+      - name: Create issue for vulnerabilities
+        if: steps.audit.outputs.has-vulnerabilities == 'true'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require('fs');
+            const auditResults = fs.readFileSync('${{ inputs.working-directory }}/audit-results.txt', 'utf8');
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'security,dependencies',
+              state: 'open'
+            });
+            
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔒 Security: Dependency vulnerabilities detected',
+                body: `## Dependency Audit Alert\n\nThe scheduled dependency audit found vulnerabilities:\n\n\`\`\`\n${auditResults.substring(0, 60000)}\n\`\`\`\n\n**Action Required:** Review and update affected dependencies.\n\n---\n*Generated by scheduled maintenance workflow on ${new Date().toISOString()}*`,
+                labels: ['security', 'dependencies', 'automated']
+              });
+            }
+
+  # ---------------------------------------------------------------------------
+  # License Check
+  # ---------------------------------------------------------------------------
+  license-check:
+    name: License Compliance
+    if: ${{ inputs.run-license-check }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ORG/owl-governance/.github/actions/setup-node-pnpm@main
+        with:
+          node-version: ${{ inputs.node-version }}
+          pnpm-version: ${{ inputs.pnpm-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check licenses
+        run: |
+          echo "::group::License Check"
+          # Install license checker
+          pnpm add -g license-checker 2>/dev/null || npm install -g license-checker
+          
+          # Define forbidden licenses for clinical/health software
+          FORBIDDEN_LICENSES="GPL-3.0,AGPL-3.0,SSPL,BUSL"
+          
+          npx license-checker --failOn "$FORBIDDEN_LICENSES" --summary || {
+            echo "❌ Forbidden license detected"
+            exit 1
+          }
+          echo "✅ All licenses are compliant"
+          echo "::endgroup::"
+
+  # ---------------------------------------------------------------------------
+  # Stale Issue/PR Cleanup
+  # ---------------------------------------------------------------------------
+  stale-cleanup:
+    name: Stale Cleanup
+    if: ${{ inputs.run-stale-cleanup }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@28ca1036281a5e5922ead5184a1bbf96e5fc984e # v9.0.0
+        with:
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity. 
+            It will be closed in ${{ inputs.stale-days-before-close }} days if no further activity occurs.
+            
+            If this issue is still relevant, please comment to keep it open.
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed in ${{ inputs.stale-days-before-close }} days if no further activity occurs.
+            
+            Please rebase and update if this PR is still needed.
+          stale-issue-label: stale
+          stale-pr-label: stale
+          days-before-stale: ${{ inputs.stale-days-before-stale }}
+          days-before-close: ${{ inputs.stale-days-before-close }}
+          exempt-issue-labels: "security,compliance,blocked"
+          exempt-pr-labels: "security,compliance,blocked"
+
+  # ---------------------------------------------------------------------------
+  # Compliance Scan
+  # ---------------------------------------------------------------------------
+  compliance-scan:
+    name: Scheduled Compliance Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Run security scan
+        uses: ORG/owl-governance/.github/actions/security-scan@main
+        with:
+          working-directory: ${{ inputs.working-directory }}
+          fail-on-findings: false  # Don't fail scheduled runs, just report
+
+      - name: Audit timestamp compliance
+        run: |
+          echo "::group::Timestamp Compliance Audit"
+          echo "Scanning for timestamp violations..."
+          
+          VIOLATIONS=$(grep -rn "new Date()" --include="*.ts" --include="*.tsx" \
+            | grep -v "toISOString\|toUTCString\|// @timestamp-exempt\|test\|spec\|node_modules" \
+            || echo "")
+          
+          if [[ -n "$VIOLATIONS" ]]; then
+            echo "⚠️ Potential timestamp violations found:"
+            echo "$VIOLATIONS"
+          else
+            echo "✅ No timestamp violations detected"
+          fi
+          echo "::endgroup::"
+
+  # ---------------------------------------------------------------------------
+  # Summary Report
+  # ---------------------------------------------------------------------------
+  summary:
+    name: Maintenance Summary
+    needs: [dependency-audit, license-check, stale-cleanup, compliance-scan]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 📊 Scheduled Maintenance Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Check | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Dependency Audit | ${{ needs.dependency-audit.result == 'success' && '✅' || needs.dependency-audit.result == 'skipped' && '⏭️' || '❌' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| License Check | ${{ needs.license-check.result == 'success' && '✅' || needs.license-check.result == 'skipped' && '⏭️' || '❌' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Stale Cleanup | ${{ needs.stale-cleanup.result == 'success' && '✅' || needs.stale-cleanup.result == 'skipped' && '⏭️' || '❌' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Compliance Scan | ${{ needs.compliance-scan.result == 'success' && '✅' || needs.compliance-scan.result == 'skipped' && '⏭️' || '❌' }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Run Time:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,234 @@
+# =============================================================================
+# COMPOSITE ACTION: Security Scan
+# =============================================================================
+# Centralized security scanning for all repositories.
+# Includes: secret detection, SAST, dependency scanning.
+# =============================================================================
+
+name: Security Scan
+description: |
+  Composite action to run security scans including secret detection,
+  static analysis, and dependency vulnerability checks.
+
+inputs:
+  working-directory:
+    description: "Working directory to scan"
+    required: false
+    default: "."
+  fail-on-findings:
+    description: "Fail the workflow if security issues are found"
+    required: false
+    default: "true"
+  scan-secrets:
+    description: "Enable secret detection scanning"
+    required: false
+    default: "true"
+  scan-sast:
+    description: "Enable static application security testing"
+    required: false
+    default: "true"
+  scan-dependencies:
+    description: "Enable dependency vulnerability scanning"
+    required: false
+    default: "true"
+  severity-threshold:
+    description: "Minimum severity to report (low, medium, high, critical)"
+    required: false
+    default: "high"
+
+outputs:
+  secrets-found:
+    description: "Whether secrets were detected"
+    value: ${{ steps.secret-scan.outputs.found }}
+  vulnerabilities-found:
+    description: "Whether vulnerabilities were detected"
+    value: ${{ steps.dependency-scan.outputs.found }}
+  scan-report:
+    description: "Path to the consolidated scan report"
+    value: ${{ steps.consolidate.outputs.report-path }}
+
+runs:
+  using: composite
+  steps:
+    # -------------------------------------------------------------------------
+    # Step 1: Secret Detection
+    # -------------------------------------------------------------------------
+    - name: Secret Detection
+      id: secret-scan
+      if: ${{ inputs.scan-secrets == 'true' }}
+      shell: bash
+      run: |
+        echo "::group::Secret Detection Scan"
+        
+        # Patterns to detect potential secrets
+        SECRET_PATTERNS=(
+          "password\s*[:=]\s*['\"][^'\"]+['\"]"
+          "api[_-]?key\s*[:=]\s*['\"][^'\"]+['\"]"
+          "secret\s*[:=]\s*['\"][^'\"]+['\"]"
+          "token\s*[:=]\s*['\"][^'\"]+['\"]"
+          "private[_-]?key"
+          "-----BEGIN.*PRIVATE KEY-----"
+          "ghp_[a-zA-Z0-9]{36}"
+          "gho_[a-zA-Z0-9]{36}"
+          "github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}"
+          "xox[baprs]-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*"
+          "sk-[a-zA-Z0-9]{48}"
+          "AKIA[0-9A-Z]{16}"
+        )
+        
+        FOUND=false
+        FINDINGS=""
+        
+        for pattern in "${SECRET_PATTERNS[@]}"; do
+          MATCHES=$(grep -rniE "$pattern" "${{ inputs.working-directory }}" \
+            --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" \
+            --include="*.yml" --include="*.yaml" --include="*.env*" \
+            --exclude-dir=node_modules --exclude-dir=.git \
+            2>/dev/null || true)
+          
+          if [[ -n "$MATCHES" ]]; then
+            FOUND=true
+            FINDINGS="${FINDINGS}\n${MATCHES}"
+          fi
+        done
+        
+        if [[ "$FOUND" == "true" ]]; then
+          echo "❌ Potential secrets detected:"
+          echo -e "$FINDINGS"
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          if [[ "${{ inputs.fail-on-findings }}" == "true" ]]; then
+            exit 1
+          fi
+        else
+          echo "✅ No secrets detected"
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+        
+        echo "::endgroup::"
+
+    # -------------------------------------------------------------------------
+    # Step 2: Static Analysis (SAST)
+    # -------------------------------------------------------------------------
+    - name: Static Analysis
+      id: sast-scan
+      if: ${{ inputs.scan-sast == 'true' }}
+      shell: bash
+      run: |
+        echo "::group::Static Application Security Testing"
+        
+        # Check for dangerous patterns in code
+        DANGEROUS_PATTERNS=(
+          "eval\s*\("
+          "Function\s*\("
+          "innerHTML\s*="
+          "dangerouslySetInnerHTML"
+          "document\.write"
+          "child_process\.exec\s*\("
+          "shell\s*:\s*true"
+          "sql.*\+.*\$"
+        )
+        
+        FINDINGS=""
+        ISSUE_COUNT=0
+        
+        for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+          MATCHES=$(grep -rniE "$pattern" "${{ inputs.working-directory }}" \
+            --include="*.ts" --include="*.tsx" --include="*.js" \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist \
+            2>/dev/null || true)
+          
+          if [[ -n "$MATCHES" ]]; then
+            FINDINGS="${FINDINGS}\n⚠️ Pattern: ${pattern}\n${MATCHES}\n"
+            ISSUE_COUNT=$((ISSUE_COUNT + 1))
+          fi
+        done
+        
+        if [[ $ISSUE_COUNT -gt 0 ]]; then
+          echo "⚠️ Static analysis found $ISSUE_COUNT potential issues:"
+          echo -e "$FINDINGS"
+          echo "issues=$ISSUE_COUNT" >> "$GITHUB_OUTPUT"
+        else
+          echo "✅ No dangerous patterns detected"
+          echo "issues=0" >> "$GITHUB_OUTPUT"
+        fi
+        
+        echo "::endgroup::"
+
+    # -------------------------------------------------------------------------
+    # Step 3: Dependency Vulnerability Scan
+    # -------------------------------------------------------------------------
+    - name: Dependency Vulnerability Scan
+      id: dependency-scan
+      if: ${{ inputs.scan-dependencies == 'true' }}
+      shell: bash
+      run: |
+        echo "::group::Dependency Vulnerability Scan"
+        
+        cd "${{ inputs.working-directory }}"
+        
+        FOUND=false
+        
+        # Check for package-lock.json (npm)
+        if [[ -f "package-lock.json" ]]; then
+          echo "Scanning npm dependencies..."
+          npm audit --audit-level=${{ inputs.severity-threshold }} 2>&1 || FOUND=true
+        fi
+        
+        # Check for pnpm-lock.yaml (pnpm)
+        if [[ -f "pnpm-lock.yaml" ]]; then
+          echo "Scanning pnpm dependencies..."
+          pnpm audit --audit-level=${{ inputs.severity-threshold }} 2>&1 || FOUND=true
+        fi
+        
+        if [[ "$FOUND" == "true" ]]; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+          if [[ "${{ inputs.fail-on-findings }}" == "true" ]]; then
+            echo "❌ Vulnerabilities found at or above ${{ inputs.severity-threshold }} severity"
+            exit 1
+          fi
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "✅ No vulnerabilities found at or above ${{ inputs.severity-threshold }} severity"
+        fi
+        
+        echo "::endgroup::"
+
+    # -------------------------------------------------------------------------
+    # Step 4: Consolidate Results
+    # -------------------------------------------------------------------------
+    - name: Consolidate Scan Results
+      id: consolidate
+      shell: bash
+      run: |
+        echo "::group::Scan Summary"
+        
+        REPORT_PATH="${{ inputs.working-directory }}/security-scan-report.json"
+        
+        cat > "$REPORT_PATH" << EOF
+        {
+          "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+          "working_directory": "${{ inputs.working-directory }}",
+          "scans": {
+            "secrets": {
+              "enabled": ${{ inputs.scan-secrets }},
+              "found": ${{ steps.secret-scan.outputs.found || 'false' }}
+            },
+            "sast": {
+              "enabled": ${{ inputs.scan-sast }},
+              "issues": ${{ steps.sast-scan.outputs.issues || 0 }}
+            },
+            "dependencies": {
+              "enabled": ${{ inputs.scan-dependencies }},
+              "vulnerabilities_found": ${{ steps.dependency-scan.outputs.found || 'false' }}
+            }
+          },
+          "severity_threshold": "${{ inputs.severity-threshold }}",
+          "fail_on_findings": ${{ inputs.fail-on-findings }}
+        }
+        EOF
+        
+        echo "report-path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+        echo "📋 Scan report saved to: $REPORT_PATH"
+        cat "$REPORT_PATH"
+        
+        echo "::endgroup::"
