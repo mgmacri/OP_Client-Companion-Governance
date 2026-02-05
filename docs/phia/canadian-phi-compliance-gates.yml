@@ -1,0 +1,2551 @@
+# Canadian Provincial Health Information Compliance Gates
+# Mental Health Client Logging Application - Engineering Requirements
+# Version: 2.0
+# Date: 2026-02-04
+# Classification: Compliance Engineering Analysis
+
+metadata:
+  document_version: "2.0"
+  created_date: "2026-02-04"
+  revised_date: "2026-02-04"
+  application: "Mental Health Client Logging App"
+  disclaimer: "This document provides compliance engineering analysis, not legal advice. Consult qualified legal counsel for authoritative interpretation."
+  data_types_covered:
+    - mood_diary_entries
+    - cbt_thought_records
+    - sleep_logs
+    - anxiety_episodes
+    - triggers
+    - symptoms
+    - magnitude_scores
+    - safety_notes
+    - treatment_communications_metadata
+
+provinces_in_scope:
+  - code: "CA"
+    name: "Federal (Canada)"
+    act: "Personal Information Protection and Electronic Documents Act (PIPEDA)"
+    citation: "S.C. 2000, c. 5"
+    regulator: "Office of the Privacy Commissioner of Canada"
+    note: "Applies to interprovincial/international transfers; federal baseline"
+
+  - code: "ON"
+    name: "Ontario"
+    act: "Personal Health Information Protection Act, 2004 (PHIPA)"
+    citation: "S.O. 2004, c. 3"
+    regulator: "Information and Privacy Commissioner of Ontario"
+    
+  - code: "AB"
+    name: "Alberta"
+    act: "Health Information Act (HIA)"
+    citation: "RSA 2000, c. H-5"
+    regulator: "Office of the Information and Privacy Commissioner of Alberta"
+    
+  - code: "MB"
+    name: "Manitoba"
+    act: "Personal Health Information Act (PHIA)"
+    citation: "C.C.S.M. c. P33.5"
+    regulator: "Manitoba Ombudsman"
+    
+  - code: "SK"
+    name: "Saskatchewan"
+    act: "Health Information Protection Act (HIPA)"
+    citation: "c. H-0.021"
+    regulator: "Information and Privacy Commissioner of Saskatchewan"
+    
+  - code: "BC"
+    name: "British Columbia"
+    act: "Personal Information Protection Act (PIPA) + E-Health Act"
+    citation: "SBC 2003, c. 63 + SBC 2008, c. 38"
+    regulator: "Office of the Information and Privacy Commissioner for BC"
+    note: "PIPA governs private sector; E-Health Act for designated health information banks"
+    
+  - code: "NB"
+    name: "New Brunswick"
+    act: "Personal Health Information Privacy and Access Act (PHIPAA)"
+    citation: "c. P-7.05"
+    regulator: "Access to Information and Privacy Commissioner"
+
+  - code: "NS"
+    name: "Nova Scotia"
+    act: "Personal Health Information Act"
+    citation: "Chapter 41 of the Acts of 2010"
+    regulator: "Office of the Information and Privacy Commissioner for Nova Scotia"
+    
+  - code: "PE"
+    name: "Prince Edward Island"
+    act: "Health Information Act"
+    citation: "c. H-1.41"
+    regulator: "Information and Privacy Commissioner of PEI"
+    
+  - code: "NL"
+    name: "Newfoundland and Labrador"
+    act: "Personal Health Information Act"
+    citation: "SNL 2008, c. P-7.01"
+    regulator: "Office of the Information and Privacy Commissioner of NL"
+    
+  - code: "QC"
+    name: "Quebec"
+    act: "Act Respecting the Sharing of Certain Health Information + Act Respecting the Protection of Personal Information in the Private Sector"
+    citation: "P-9.0001 + P-39.1"
+    regulator: "Commission d'accès à l'information du Québec"
+
+# ==============================================================================
+# HARMONIZED NATIONAL BASELINE
+# ==============================================================================
+
+harmonized_baseline:
+  consent:
+    must_be_knowledgeable: true
+    must_not_be_obtained_through_deception: true
+    must_not_be_obtained_through_coercion: true
+    express_required_for_non_custodian_disclosure: true
+    withdrawal_must_be_permitted: true
+    withdrawal_is_non_retroactive: true
+    record_must_be_maintained: true
+    strictest_source: "ON PHIPA s.18, AB HIA s.34, MB PHIA s.19.1, NL PHIA s.23, PIPEDA Schedule 1 Principle 3"
+    
+  collection:
+    minimum_necessary_principle: true
+    direct_collection_preferred: true
+    notice_of_purposes_required: true
+    lawful_purpose_only: true
+    strictest_source: "ON PHIPA s.30, SK HIPA s.23-25, NS PHIA s.25, BC PIPA s.11, PIPEDA Schedule 1 Principle 4"
+    
+  security:
+    administrative_safeguards_required: true
+    technical_safeguards_required: true
+    physical_safeguards_required: true
+    reasonable_steps_against_unauthorized_access: true
+    strictest_source: "ON PHIPA s.12(1), MB PHIA s.18, NL PHIA s.15, NS PHIA s.28, BC PIPA s.34, PIPEDA Schedule 1 Principle 7"
+    
+  breach_notification:
+    notify_affected_individual: true
+    notify_regulator: true
+    include_complaint_rights: true
+    risk_of_harm_assessment: true
+    maintain_breach_records: true
+    strictest_source: "ON PHIPA s.12(2-3), AB HIA s.60.1, NL PHIA s.20, PIPEDA s.10.1-10.3"
+
+# ==============================================================================
+# COMPLIANCE GATES
+# ==============================================================================
+
+gates:
+
+  # ----------------------------------------------------------------------------
+  # GATE G1: Data Mapping & Classification
+  # ----------------------------------------------------------------------------
+  
+  - id: "G1"
+    name: "Data Mapping & Classification"
+    description: "Identify and classify all personal health information in the system"
+    risk_level: "HIGH"
+    rationale: "Failure to properly classify PHI can result in unauthorized disclosures"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.4(1)"
+            description: "Definition of personal health information"
+          - section: "s.30(1-2)"
+            description: "Collection limitation principles"
+            
+    implementation_requirements:
+      technical:
+        - "Create data dictionary mapping all fields to PHI categories"
+        - "Tag database columns with PHI sensitivity levels"
+        - "Implement data flow diagrams showing PHI movement"
+      policy:
+        - "Document PHI classification policy"
+        - "Train staff on PHI identification"
+        - "Annual review of data classification"
+        
+    acceptance_criteria:
+      - id: "G1-AC01"
+        scenario: "All PHI fields are identified and classified"
+        given: "the application collects user data"
+        when: "I review the data dictionary"
+        then:
+          - "every field containing information relating to physical or mental health SHALL be tagged as 'PHI-Health'"
+          - "every field containing information relating to health care provision SHALL be tagged as 'PHI-Care'"
+          - "every field containing health numbers SHALL be tagged as 'PHI-HealthNumber'"
+          - "the classification SHALL reference PHIPA s.4(1)"
+          
+      - id: "G1-AC02"
+        scenario: "Data flow documentation exists"
+        given: "PHI is processed by the application"
+        when: "I request data flow documentation"
+        then:
+          - "a diagram SHALL exist showing all PHI collection points"
+          - "a diagram SHALL exist showing all PHI storage locations"
+          - "a diagram SHALL exist showing all PHI disclosure paths"
+          - "each flow SHALL indicate the legal authority (consent or statutory)"
+          
+      - id: "G1-AC03"
+        scenario: "Non-PHI data is segregated"
+        given: "the application processes both PHI and non-PHI data"
+        when: "data is stored"
+        then:
+          - "PHI SHALL be logically or physically segregated from non-PHI"
+          - "segregation boundaries SHALL be documented"
+          
+    evidence_artifacts:
+      - "Data dictionary with PHI tags"
+      - "Data flow diagrams"
+      - "PHI classification policy document"
+      - "Training records"
+
+  # ----------------------------------------------------------------------------
+  # GATE G2: Lawful Authority / Consent
+  # ----------------------------------------------------------------------------
+  
+  - id: "G2"
+    name: "Lawful Authority / Consent"
+    description: "Obtain valid consent before collecting, using, or disclosing PHI"
+    risk_level: "HIGH"
+    rationale: "Invalid consent undermines legal authority for all data processing"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.18"
+            description: "Elements of consent"
+          - section: "s.19"
+            description: "Withdrawal of consent"
+          - section: "s.20"
+            description: "Assumption of validity / implied consent"
+          - section: "s.29"
+            description: "Requirement for consent"
+      AB:
+        references:
+          - section: "s.34"
+            description: "Consent required for disclosure"
+          - section: "s.35-40"
+            description: "Exceptions to consent requirement"
+      MB:
+        references:
+          - section: "s.19.1"
+            description: "Elements of consent"
+          - section: "s.19.2"
+            description: "Consent may be withdrawn"
+          - section: "s.22"
+            description: "Restrictions on disclosure"
+      SK:
+        references:
+          - section: "s.5"
+            description: "Consent required"
+          - section: "s.6"
+            description: "Written/oral consent"
+          - section: "s.7"
+            description: "Withdrawal of consent"
+            
+    implementation_requirements:
+      technical:
+        - "Consent capture UI with clear purpose statement"
+        - "Consent withdrawal mechanism"
+        - "Consent versioning and audit trail"
+        - "Timestamp all consent events (UTC)"
+      policy:
+        - "Consent policy document"
+        - "Staff training on consent validity"
+        - "Consent form review process"
+        - "Record retention for consent records"
+        
+    acceptance_criteria:
+      - id: "G2-AC01"
+        scenario: "Patient provides knowledgeable consent"
+        given: "a patient is registering for the app"
+        when: "the consent screen is displayed"
+        then:
+          - "the screen SHALL clearly state the purposes of collection per PHIPA s.18(5)"
+          - "the screen SHALL state the patient may give or withhold consent"
+          - "consent SHALL NOT be pre-checked or assumed"
+          - "the consent language SHALL be in plain language readable at grade 8 level"
+        provinces: ["ON", "AB", "MB", "SK", "BC", "NB", "PE", "NL", "QC"]
+        
+      - id: "G2-AC02"
+        scenario: "Express consent for sharing with practitioner"
+        given: "a patient wants to share log entries with their practitioner"
+        when: "the sharing feature is accessed"
+        then:
+          - "express consent SHALL be obtained per PHIPA s.18(3)"
+          - "the consent SHALL specify which practitioner receives the data"
+          - "the consent SHALL specify what information is shared"
+          - "a record of consent SHALL be stored with timestamp"
+        provinces: ["ON", "AB", "MB", "SK", "NB", "PE"]
+        
+      - id: "G2-AC03"
+        scenario: "Patient withdraws consent"
+        given: "a patient has previously consented to data sharing"
+        when: "the patient accesses privacy settings"
+        then:
+          - "a clear 'Withdraw Consent' option SHALL be available"
+          - "upon withdrawal, the system SHALL stop future disclosures immediately"
+          - "the system SHALL NOT retroactively delete already-shared information per PHIPA s.19(1)"
+          - "a record of withdrawal SHALL be stored with timestamp"
+        provinces: ["ON", "AB", "MB", "SK", "NB", "PE"]
+        
+      - id: "G2-AC04"
+        scenario: "Consent record integrity"
+        given: "consent has been obtained"
+        when: "the consent record is examined"
+        then:
+          - "it SHALL include: individual identifier, timestamp (UTC), version of consent text, method of consent"
+          - "the record SHALL be immutable (append-only)"
+          - "the record SHALL be retained for the prescribed period"
+        provinces: ["ON", "AB", "MB", "SK", "BC", "NB", "PE", "NL", "QC"]
+        
+      - id: "G2-AC05"
+        scenario: "Manitoba consent elements"
+        given: "Manitoba PHIA applies"
+        when: "consent is obtained"
+        then:
+          - "consent SHALL relate to the information per PHIA s.19.1(a)"
+          - "consent SHALL relate to the purpose per PHIA s.19.1(b)"
+          - "consent SHALL be given by individual or authorized person per PHIA s.19.1(c)"
+          - "consent SHALL be informed per PHIA s.19.1(d)"
+          - "consent SHALL be given voluntarily per PHIA s.19.1(e)"
+          - "consent SHALL NOT be obtained through misrepresentation per PHIA s.19.1(f)"
+        provinces: ["MB"]
+        
+    evidence_artifacts:
+      - "Consent UI screenshots"
+      - "Consent text versions (all)"
+      - "Consent withdrawal UI screenshots"
+      - "Consent database schema showing audit fields"
+      - "Sample consent records"
+      - "Consent policy document"
+
+  # ----------------------------------------------------------------------------
+  # GATE G3: Collection Limitation & Purpose Specification
+  # ----------------------------------------------------------------------------
+  
+  - id: "G3"
+    name: "Collection Limitation & Purpose Specification"
+    description: "Collect only the minimum PHI necessary for the specified purpose"
+    risk_level: "MEDIUM"
+    rationale: "Over-collection increases breach risk and regulatory exposure"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.29"
+            description: "Collection only for lawful purpose with consent"
+          - section: "s.30(1)"
+            description: "Do not collect PHI if other information will serve"
+          - section: "s.30(2)"
+            description: "Do not collect more than reasonably necessary"
+          - section: "s.36"
+            description: "Indirect collection restrictions"
+      SK:
+        references:
+          - section: "s.23"
+            description: "Collection, use and disclosure on need-to-know basis"
+          - section: "s.24"
+            description: "Restrictions on collection"
+          - section: "s.25"
+            description: "Manner of collection"
+      MB:
+        references:
+          - section: "s.14"
+            description: "Restrictions on collection"
+          - section: "s.15"
+            description: "Collection notice"
+            
+    implementation_requirements:
+      technical:
+        - "Field-level necessity review for all forms"
+        - "Optional vs mandatory field distinction"
+        - "Block collection of unnecessary fields"
+      policy:
+        - "Purpose specification document"
+        - "Data minimization review process"
+        - "Staff training on minimum necessary"
+        
+    acceptance_criteria:
+      - id: "G3-AC01"
+        scenario: "Only necessary fields are collected"
+        given: "the mood log form is designed"
+        when: "a product manager reviews the form"
+        then:
+          - "every field SHALL have documented necessity justification"
+          - "fields not necessary for the stated purpose SHALL be removed or made optional"
+          - "optional fields SHALL be clearly marked as optional"
+          
+      - id: "G3-AC02"
+        scenario: "Purpose is specified at collection"
+        given: "a patient submits a mood log entry"
+        when: "the entry is collected"
+        then:
+          - "the patient SHALL have been informed of the purpose (providing mental health support)"
+          - "the purpose SHALL be recorded with the data"
+          
+      - id: "G3-AC03"
+        scenario: "No collection of unnecessary PHI"
+        given: "the app collects PHI"
+        when: "I audit the data schema"
+        then:
+          - "fields like social insurance number SHALL NOT be collected"
+          - "fields like financial information (unless required for care) SHALL NOT be collected"
+          - "each collected field SHALL map to a defined purpose"
+          
+      - id: "G3-AC04"
+        scenario: "Saskatchewan need-to-know collection"
+        given: "Saskatchewan HIPA applies"
+        when: "PHI is collected"
+        then:
+          - "collection SHALL be limited to what is reasonably necessary per HIPA s.23"
+          - "direct collection from individual SHALL be preferred per HIPA s.25"
+        provinces: ["SK"]
+        
+    evidence_artifacts:
+      - "Data necessity justification matrix"
+      - "Collection notice/privacy statement"
+      - "Form designs showing optional vs mandatory"
+      - "Purpose specification document"
+
+  # ----------------------------------------------------------------------------
+  # GATE G4: Use & Disclosure Controls
+  # ----------------------------------------------------------------------------
+  
+  - id: "G4"
+    name: "Use & Disclosure Controls"
+    description: "PHI may only be used for collected purpose; disclosure requires consent or statutory authority"
+    risk_level: "HIGH"
+    rationale: "Unauthorized disclosure is a primary compliance violation risk"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.29"
+            description: "Requirement for consent"
+          - section: "s.30"
+            description: "Minimum necessary"
+          - section: "s.31"
+            description: "Cannot use/disclose if collected in contravention"
+          - section: "s.37"
+            description: "Permitted use"
+          - section: "s.38"
+            description: "Disclosures related to providing health care"
+          - section: "s.50"
+            description: "Disclosure outside Ontario"
+      AB:
+        references:
+          - section: "s.27"
+            description: "Authorized purposes for use"
+          - section: "s.34-40"
+            description: "Disclosure provisions"
+          - section: "s.57"
+            description: "Least amount of information"
+          - section: "s.58"
+            description: "Highest degree of anonymity"
+            
+    implementation_requirements:
+      technical:
+        - "Role-based access control (RBAC)"
+        - "Purpose-of-access logging"
+        - "Patient sharing controls (granular)"
+        - "Practitioner access audit"
+      policy:
+        - "Access control policy"
+        - "Disclosure logging procedure"
+        - "Staff training on authorized disclosures"
+        - "Disclosure review process"
+        
+    acceptance_criteria:
+      - id: "G4-AC01"
+        scenario: "Practitioner access is limited to their patients"
+        given: "a practitioner is logged into the portal"
+        when: "they search for patient records"
+        then:
+          - "they SHALL only see patients who have consented to share with them"
+          - "access attempts to other patients SHALL be denied"
+          - "denied access attempts SHALL be logged"
+          
+      - id: "G4-AC02"
+        scenario: "Patient controls what is shared"
+        given: "a patient wants to share with their practitioner"
+        when: "accessing sharing settings"
+        then:
+          - "the patient SHALL be able to select which log types to share"
+          - "the patient SHALL be able to select date ranges"
+          - "the patient SHALL be able to revoke sharing at any time"
+          
+      - id: "G4-AC03"
+        scenario: "Use is limited to purpose"
+        given: "PHI was collected for providing mental health care"
+        when: "the PHI is used"
+        then:
+          - "it SHALL only be used for providing mental health care per PHIPA s.37"
+          - "it SHALL NOT be used for marketing per PHIPA s.33"
+          - "it SHALL NOT be used for fundraising without express consent per PHIPA s.32"
+          
+      - id: "G4-AC04"
+        scenario: "Disclosure outside Ontario"
+        given: "a practitioner is located outside Ontario"
+        when: "the patient shares PHI with them"
+        then:
+          - "the system SHALL assess whether disclosure outside Ontario is permitted per PHIPA s.50"
+          - "consent SHALL be explicit for cross-border disclosure"
+          - "the receiving jurisdiction SHALL provide comparable protection"
+        provinces: ["ON"]
+        
+      - id: "G4-AC05"
+        scenario: "Alberta minimum necessary and maximum anonymity"
+        given: "Alberta HIA applies"
+        when: "PHI is used or disclosed"
+        then:
+          - "only the least amount of information necessary SHALL be used per HIA s.57"
+          - "the highest degree of anonymity possible SHALL be maintained per HIA s.58"
+        provinces: ["AB"]
+        
+    evidence_artifacts:
+      - "RBAC configuration documentation"
+      - "Access control matrix"
+      - "Patient sharing UI screenshots"
+      - "Disclosure log samples"
+      - "Cross-border disclosure assessment template"
+
+  # ----------------------------------------------------------------------------
+  # GATE G5: Patient Rights (Access, Correction, Accounting)
+  # ----------------------------------------------------------------------------
+  
+  - id: "G5"
+    name: "Patient Rights"
+    description: "Patients have the right to access their PHI, request corrections, and receive accounting of disclosures"
+    risk_level: "MEDIUM"
+    rationale: "Patient rights are fundamental; failure results in complaints to Commissioner"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.52"
+            description: "Individual's right of access"
+          - section: "s.53"
+            description: "Request for access"
+          - section: "s.54"
+            description: "Response of health information custodian"
+          - section: "s.55"
+            description: "Correction"
+          - section: "s.16(2)"
+            description: "Notation of disclosures outside information practices"
+      MB:
+        references:
+          - section: "s.5"
+            description: "Right to examine and copy"
+          - section: "s.6-7"
+            description: "Trustee response requirements"
+          - section: "s.12"
+            description: "Correction of health information"
+            
+    implementation_requirements:
+      technical:
+        - "Patient data export feature"
+        - "Correction request workflow"
+        - "Disclosure log viewable by patient"
+        - "Audit trail of all access"
+      policy:
+        - "Access request procedure"
+        - "Response timeline tracking (30 days)"
+        - "Correction decision documentation"
+        - "Fee schedule (if applicable)"
+        
+    acceptance_criteria:
+      - id: "G5-AC01"
+        scenario: "Patient accesses their PHI"
+        given: "a patient wants to access their information"
+        when: "they navigate to their profile/data section"
+        then:
+          - "they SHALL be able to view all their log entries"
+          - "they SHALL be able to view their account information"
+          - "they SHALL be able to export their data in a readable format"
+          
+      - id: "G5-AC02"
+        scenario: "Patient requests correction"
+        given: "a patient believes their information is inaccurate"
+        when: "they submit a correction request"
+        then:
+          - "the system SHALL acknowledge receipt"
+          - "the custodian SHALL respond within 30 days per PHIPA s.55"
+          - "if granted, the correction SHALL be made and linked records notified"
+          - "if denied, the patient's statement of disagreement SHALL be attached"
+          
+      - id: "G5-AC03"
+        scenario: "Patient views disclosure log"
+        given: "disclosures without consent have occurred"
+        when: "the patient accesses their disclosure history"
+        then:
+          - "they SHALL see a record of disclosures made without consent per PHIPA s.16(2)"
+          - "each record SHALL include: date, recipient type, purpose"
+          
+      - id: "G5-AC04"
+        scenario: "Manitoba access request response time"
+        given: "Manitoba PHIA applies"
+        when: "a patient requests access to their PHI"
+        then:
+          - "the trustee SHALL respond within 30 days per PHIA s.6"
+          - "an extension of up to 30 additional days MAY be taken with notice per PHIA s.7"
+        provinces: ["MB"]
+        
+    evidence_artifacts:
+      - "Patient data access UI screenshots"
+      - "Data export sample"
+      - "Correction request workflow documentation"
+      - "Disclosure log UI screenshots"
+      - "Response time tracking reports"
+
+  # ----------------------------------------------------------------------------
+  # GATE G6: Safeguards (Administrative, Technical, Physical)
+  # ----------------------------------------------------------------------------
+  
+  - id: "G6"
+    name: "Safeguards"
+    description: "Protect PHI against theft, loss, unauthorized use/disclosure, copying, modification, or disposal"
+    risk_level: "HIGH"
+    rationale: "Security breaches result in harm to individuals and significant penalties"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.12(1)"
+            description: "Security measures required"
+          - section: "s.10"
+            description: "Information practices"
+          - section: "s.10.1"
+            description: "Electronic audit log"
+          - section: "s.13"
+            description: "Handling of records"
+      MB:
+        references:
+          - section: "s.18"
+            description: "Duty to establish security safeguards"
+          - section: "s.19"
+            description: "Safeguards for sensitive information"
+            
+    implementation_requirements:
+      administrative:
+        - "Information security policy"
+        - "Staff training program"
+        - "Background checks"
+        - "Incident response plan"
+        - "Vendor management policy"
+        - "Privacy impact assessments"
+      technical:
+        - "Encryption at rest (AES-256)"
+        - "Encryption in transit (TLS 1.2+)"
+        - "Multi-factor authentication"
+        - "Role-based access control"
+        - "Intrusion detection/prevention"
+        - "Audit logging"
+        - "Vulnerability scanning"
+        - "Secure coding practices"
+      physical:
+        - "Secure data centers"
+        - "Access controls to facilities"
+        - "Visitor logs"
+        - "Device security"
+        - "Media disposal procedures"
+        
+    acceptance_criteria:
+      - id: "G6-AC01"
+        scenario: "Encryption at rest"
+        given: "PHI is stored in the database"
+        when: "the storage is examined"
+        then:
+          - "all PHI fields SHALL be encrypted using AES-256 or equivalent"
+          - "encryption keys SHALL be managed securely (HSM or equivalent)"
+          - "key rotation SHALL occur at least annually"
+          
+      - id: "G6-AC02"
+        scenario: "Encryption in transit"
+        given: "PHI is transmitted between components"
+        when: "transmission occurs"
+        then:
+          - "TLS 1.2 or higher SHALL be used"
+          - "weak cipher suites SHALL be disabled"
+          - "certificate validity SHALL be verified"
+          
+      - id: "G6-AC03"
+        scenario: "Access control"
+        given: "users access the system"
+        when: "authentication occurs"
+        then:
+          - "multi-factor authentication SHALL be required for practitioners"
+          - "session timeouts SHALL be enforced (max 30 minutes idle)"
+          - "failed login attempts SHALL trigger lockout after 5 attempts"
+          
+      - id: "G6-AC04"
+        scenario: "Electronic audit log per PHIPA s.10.1"
+        given: "PHI records are accessed electronically"
+        when: "any access, modification, or handling occurs"
+        then:
+          - "an audit log entry SHALL be created"
+          - "the entry SHALL include: timestamp, user identity, action, record identifier, individual identifier"
+          - "logs SHALL be immutable (append-only)"
+          - "logs SHALL be retained for prescribed period"
+          - "logs SHALL be available to Commissioner upon request"
+          
+      - id: "G6-AC05"
+        scenario: "Vulnerability management"
+        given: "the application is in production"
+        when: "security scanning occurs"
+        then:
+          - "vulnerability scans SHALL run at least monthly"
+          - "critical vulnerabilities SHALL be remediated within 72 hours"
+          - "high vulnerabilities SHALL be remediated within 30 days"
+          
+      - id: "G6-AC06"
+        scenario: "Manitoba sensitive information safeguards"
+        given: "mental health information is particularly sensitive"
+        when: "such information is handled"
+        then:
+          - "additional safeguards SHALL be applied per PHIA s.19"
+          - "access SHALL be limited to minimum necessary personnel"
+        provinces: ["MB"]
+        
+    evidence_artifacts:
+      - "Security policy document"
+      - "Encryption configuration evidence"
+      - "Penetration test reports"
+      - "Vulnerability scan reports"
+      - "Audit log samples"
+      - "MFA configuration evidence"
+      - "Training completion records"
+      - "SOC 2 Type II report (if available)"
+
+  # ----------------------------------------------------------------------------
+  # GATE G7: Breach & Incident Response
+  # ----------------------------------------------------------------------------
+  
+  - id: "G7"
+    name: "Breach & Incident Response"
+    description: "Detect breaches and notify affected individuals and regulators according to statutory requirements"
+    risk_level: "HIGH"
+    rationale: "Breach response failures result in penalties and loss of trust"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.12(2)"
+            description: "Notice to individual of theft, loss, unauthorized use/disclosure"
+          - section: "s.12(3)"
+            description: "Notice to Commissioner when prescribed requirements met"
+          - section: "s.17(4)(b)"
+            description: "Agent must notify custodian of breach"
+      AB:
+        references:
+          - section: "s.60.1"
+            description: "Duty to notify"
+          - section: "Chapter 14 Guidelines"
+            description: "Detailed notification procedures"
+            
+    implementation_requirements:
+      technical:
+        - "Breach detection capabilities"
+        - "Incident ticketing system"
+        - "Communication channels for notification"
+        - "Forensic investigation tools"
+      policy:
+        - "Incident response plan"
+        - "Notification templates"
+        - "Escalation procedures"
+        - "Regulatory reporting procedures"
+        
+    acceptance_criteria:
+      - id: "G7-AC01"
+        scenario: "Breach detected and contained"
+        given: "a potential breach is identified"
+        when: "the incident response plan is activated"
+        then:
+          - "the breach SHALL be contained within 4 hours of detection"
+          - "affected systems SHALL be isolated"
+          - "evidence SHALL be preserved for investigation"
+          
+      - id: "G7-AC02"
+        scenario: "Individual notification (Ontario)"
+        given: "a breach involving PHI has occurred"
+        when: "notification requirements are assessed"
+        then:
+          - "affected individuals SHALL be notified at first reasonable opportunity per PHIPA s.12(2)(a)"
+          - "notification SHALL include: description of breach, date/time, types of PHI affected"
+          - "notification SHALL include statement of right to complain to Commissioner per PHIPA s.12(2)(b)"
+        provinces: ["ON"]
+        
+      - id: "G7-AC03"
+        scenario: "Commissioner notification (Ontario)"
+        given: "a breach meets prescribed thresholds"
+        when: "notification is sent"
+        then:
+          - "the Commissioner SHALL be notified per PHIPA s.12(3)"
+          - "notification SHALL be sent within prescribed timeframe"
+          - "notification SHALL include prescribed content"
+        provinces: ["ON"]
+        
+      - id: "G7-AC04"
+        scenario: "Risk of harm assessment (Alberta)"
+        given: "Alberta HIA applies and a breach has occurred"
+        when: "the custodian assesses the breach"
+        then:
+          - "a risk of harm assessment SHALL be conducted per HIA s.60.1"
+          - "factors per HIA Chapter 14 SHALL be considered"
+          - "the assessment SHALL be documented"
+        provinces: ["AB"]
+        
+      - id: "G7-AC05"
+        scenario: "Notification required if risk of harm exists (Alberta)"
+        given: "a risk of harm assessment determines notification is required"
+        when: "notification is prepared"
+        then:
+          - "the Commissioner SHALL be notified per HIA s.60.1"
+          - "the Minister of Health SHALL be notified per HIA s.60.1"
+          - "affected individuals SHALL be notified per HIA s.60.1"
+          - "notification SHALL be made 'as soon as practicable'"
+        provinces: ["AB"]
+        
+      - id: "G7-AC06"
+        scenario: "Agent notifies custodian"
+        given: "the app company (as agent) detects a breach"
+        when: "the breach is confirmed"
+        then:
+          - "the custodian (practitioner) SHALL be notified at first reasonable opportunity per PHIPA s.17(4)(b)"
+          - "the notification SHALL include all relevant details"
+          
+    evidence_artifacts:
+      - "Incident response plan document"
+      - "Breach notification templates"
+      - "Risk of harm assessment template (AB)"
+      - "Incident log samples"
+      - "Commissioner notification template"
+      - "Tabletop exercise records"
+
+  # ----------------------------------------------------------------------------
+  # GATE G8: Retention, Destruction, and Record-Keeping
+  # ----------------------------------------------------------------------------
+  
+  - id: "G8"
+    name: "Retention, Destruction, and Record-Keeping"
+    description: "Retain records for prescribed period and dispose securely when retention expires"
+    risk_level: "MEDIUM"
+    rationale: "Improper retention or destruction exposes unnecessary risk"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.13(1)"
+            description: "Secure retention, transfer, disposal"
+          - section: "s.13(2)"
+            description: "Retention during access request"
+      SK:
+        references:
+          - section: "s.17"
+            description: "Retention and destruction policy required"
+            
+    implementation_requirements:
+      technical:
+        - "Automated retention tagging"
+        - "Secure deletion procedures"
+        - "Backup retention alignment"
+      policy:
+        - "Retention schedule document"
+        - "Destruction certification"
+        - "Record-keeping policy"
+        
+    acceptance_criteria:
+      - id: "G8-AC01"
+        scenario: "Retention period applied"
+        given: "PHI records are created"
+        when: "retention is determined"
+        then:
+          - "records SHALL be retained for the prescribed period (typically 10 years for health records)"
+          - "retention SHALL be measured from last contact/service date"
+          - "retention period SHALL be documented per record type"
+          
+      - id: "G8-AC02"
+        scenario: "Secure destruction"
+        given: "the retention period has expired"
+        when: "destruction is authorized"
+        then:
+          - "electronic records SHALL be securely deleted using approved methods (e.g., cryptographic erasure)"
+          - "deletion SHALL be verified"
+          - "a certificate of destruction SHALL be issued"
+          
+      - id: "G8-AC03"
+        scenario: "No destruction during access request"
+        given: "an access request is pending per PHIPA s.53"
+        when: "the retention period would otherwise expire"
+        then:
+          - "the record SHALL NOT be destroyed per PHIPA s.13(2)"
+          - "retention SHALL continue until recourse is exhausted"
+          
+      - id: "G8-AC04"
+        scenario: "Saskatchewan retention policy exists"
+        given: "Saskatchewan HIPA applies"
+        when: "the trustee's policies are examined"
+        then:
+          - "a written retention and destruction policy SHALL exist per HIPA s.17"
+          - "the policy SHALL specify retention periods by record type"
+          - "the policy SHALL specify destruction methods"
+        provinces: ["SK"]
+        
+    evidence_artifacts:
+      - "Retention schedule document"
+      - "Retention policy document"
+      - "Destruction procedure document"
+      - "Certificates of destruction (samples)"
+      - "Backup retention alignment evidence"
+
+  # ----------------------------------------------------------------------------
+  # GATE G9: Third Parties & Service Providers
+  # ----------------------------------------------------------------------------
+  
+  - id: "G9"
+    name: "Third Parties & Service Providers"
+    description: "Written agreements must govern relationships with agents, information managers, and service providers"
+    risk_level: "HIGH"
+    rationale: "Third-party breaches are attributed to the custodian"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.17"
+            description: "Agents and information"
+          - section: "s.10(4)"
+            description: "Providers to custodians using electronic means"
+      SK:
+        references:
+          - section: "s.18"
+            description: "Information management service provider requirements"
+      PE:
+        references:
+          - section: "s.41"
+            description: "Written agreement with agent of custodian"
+          - section: "s.42"
+            description: "Provision of PHI to information manager"
+          - section: "s.43"
+            description: "Requirement to comply"
+            
+    implementation_requirements:
+      technical:
+        - "Vendor inventory"
+        - "Vendor access controls"
+        - "Vendor audit capabilities"
+      policy:
+        - "Data processing agreements"
+        - "Vendor due diligence procedure"
+        - "Annual vendor review"
+        
+    acceptance_criteria:
+      - id: "G9-AC01"
+        scenario: "Agent relationship documented"
+        given: "the app company acts as agent for practitioners"
+        when: "the relationship is established"
+        then:
+          - "a written agreement SHALL exist per PHIPA s.17"
+          - "the agreement SHALL specify permitted uses and disclosures"
+          - "the agreement SHALL require compliance with PHIPA"
+          - "the agreement SHALL require breach notification"
+          
+      - id: "G9-AC02"
+        scenario: "Custodian remains responsible"
+        given: "agents process PHI on behalf of custodian"
+        when: "a compliance issue arises"
+        then:
+          - "the custodian remains responsible per PHIPA s.17(3)(b)"
+          - "the custodian SHALL take reasonable steps to ensure agent compliance per PHIPA s.17(3)(a)"
+          
+      - id: "G9-AC03"
+        scenario: "Sub-processor agreements"
+        given: "the app company uses cloud hosting providers"
+        when: "such relationships exist"
+        then:
+          - "written agreements SHALL govern PHI handling"
+          - "sub-processors SHALL be disclosed to custodians"
+          - "sub-processors SHALL meet same security requirements"
+          
+      - id: "G9-AC04"
+        scenario: "Saskatchewan IMSP agreement required"
+        given: "the app company is an Information Management Service Provider per HIPA s.2(j)"
+        when: "PHI is processed"
+        then:
+          - "a written agreement SHALL exist per HIPA s.18"
+          - "the agreement SHALL specify permitted purposes"
+          - "the agreement SHALL require confidentiality"
+          - "the agreement SHALL require security safeguards"
+          - "the agreement SHALL require breach notification to trustee"
+        provinces: ["SK"]
+        
+      - id: "G9-AC05"
+        scenario: "PEI information manager agreement"
+        given: "the app company acts as information manager"
+        when: "PHI is provided to the information manager"
+        then:
+          - "requirements of PE HIA s.42 SHALL be met"
+          - "confidentiality requirements SHALL be specified"
+          - "the custodian's instructions SHALL be documented"
+        provinces: ["PE"]
+        
+    evidence_artifacts:
+      - "Data processing agreement templates"
+      - "Executed agreements with all vendors"
+      - "Vendor inventory"
+      - "Vendor security assessments"
+      - "Sub-processor list"
+
+  # ----------------------------------------------------------------------------
+  # GATE G10: Cross-Border Transfers / Storage
+  # ----------------------------------------------------------------------------
+  
+  - id: "G10"
+    name: "Cross-Border Transfers / Storage"
+    description: "Specific requirements apply if PHI is stored or disclosed outside the province or Canada"
+    risk_level: "MEDIUM"
+    rationale: "Cross-border issues add jurisdictional complexity"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.50"
+            description: "Disclosure outside Ontario"
+      PE:
+        references:
+          - section: "s.35"
+            description: "Disclosure outside province"
+            
+    implementation_requirements:
+      technical:
+        - "Data residency configuration"
+        - "Geo-fencing capabilities"
+      policy:
+        - "Cross-border transfer assessment"
+        - "Consent for cross-border disclosure"
+        
+    acceptance_criteria:
+      - id: "G10-AC01"
+        scenario: "Data residency documented"
+        given: "the application stores PHI"
+        when: "data center locations are examined"
+        then:
+          - "all primary PHI storage locations SHALL be documented"
+          - "Canadian data residency SHALL be preferred"
+          - "any non-Canadian storage SHALL trigger cross-border assessment"
+          
+      - id: "G10-AC02"
+        scenario: "Disclosure outside Ontario with consent"
+        given: "PHI will be disclosed to a recipient outside Ontario"
+        when: "the disclosure occurs"
+        then:
+          - "consent SHALL be obtained per PHIPA s.50(1)(e)"
+          - "the individual SHALL be informed of the risks"
+        provinces: ["ON"]
+        
+      - id: "G10-AC03"
+        scenario: "Disclosure outside PEI"
+        given: "PHI will be disclosed outside Prince Edward Island"
+        when: "disclosure requirements are assessed"
+        then:
+          - "requirements of PE HIA s.35 SHALL be met"
+          - "comparable protection SHALL be ensured"
+        provinces: ["PE"]
+        
+    evidence_artifacts:
+      - "Data residency documentation"
+      - "Cross-border transfer impact assessment"
+      - "Consent records for cross-border disclosure"
+
+  # ----------------------------------------------------------------------------
+  # GATE G11: De-identification / Anonymization
+  # ----------------------------------------------------------------------------
+  
+  - id: "G11"
+    name: "De-identification / Anonymization"
+    description: "Use de-identified rather than identifiable PHI when it will serve the purpose"
+    risk_level: "LOW"
+    rationale: "Proper de-identification reduces compliance burden"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.2"
+            description: "Definition of 'de-identify'"
+          - section: "s.11.2"
+            description: "Limits on use of de-identified information"
+            
+    implementation_requirements:
+      technical:
+        - "De-identification algorithms"
+        - "Re-identification risk assessment"
+        - "Segregated analytics databases"
+      policy:
+        - "De-identification policy"
+        - "Analytics data handling procedures"
+        
+    acceptance_criteria:
+      - id: "G11-AC01"
+        scenario: "De-identification method"
+        given: "PHI needs to be de-identified"
+        when: "de-identification is performed"
+        then:
+          - "all direct identifiers SHALL be removed per PHIPA s.2 'de-identify'"
+          - "indirect identifiers SHALL be assessed for re-identification risk"
+          - "the method SHALL be documented"
+          
+      - id: "G11-AC02"
+        scenario: "Re-identification prohibited"
+        given: "de-identified information exists"
+        when: "the information is used"
+        then:
+          - "no person SHALL attempt to re-identify individuals per PHIPA s.11.2(1)"
+          - "exceptions per PHIPA s.11.2(2) SHALL be documented if applicable"
+          
+      - id: "G11-AC03"
+        scenario: "Analytics uses de-identified data"
+        given: "the application performs analytics"
+        when: "analytics data is processed"
+        then:
+          - "de-identified or aggregate data SHALL be used where possible"
+          - "identifiable PHI SHALL NOT be used for analytics without specific authorization"
+          
+    evidence_artifacts:
+      - "De-identification methodology document"
+      - "Re-identification risk assessment"
+      - "Analytics data flow documentation"
+
+  # ----------------------------------------------------------------------------
+  # GATE G12: Minors / Capacity / Substitute Decision-Makers
+  # ----------------------------------------------------------------------------
+  
+  - id: "G12"
+    name: "Minors / Capacity / Substitute Decision-Makers"
+    description: "Special rules apply when the individual is a minor or lacks capacity"
+    risk_level: "MEDIUM"
+    rationale: "Mental health apps often serve minors; proper handling is essential"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.21"
+            description: "Capacity to consent"
+          - section: "s.22"
+            description: "Determination of incapacity"
+          - section: "s.23"
+            description: "Persons who may consent (including minors under 16)"
+          - section: "s.26"
+            description: "Incapable individual - persons who may consent"
+            
+    implementation_requirements:
+      technical:
+        - "Age verification at registration"
+        - "Substitute decision-maker workflow"
+        - "Parental/guardian access controls"
+      policy:
+        - "Minor consent policy"
+        - "Capacity assessment guidelines"
+        - "SDM verification procedure"
+        
+    acceptance_criteria:
+      - id: "G12-AC01"
+        scenario: "Minor under 16 - parent may consent"
+        given: "a user is under 16 years of age"
+        when: "consent is required"
+        then:
+          - "a parent or guardian MAY consent per PHIPA s.23(1)2"
+          - "EXCEPT where the information relates to treatment the child decided on their own per PHIPA s.23(1)2(i)"
+          - "the app SHALL implement age verification"
+          
+      - id: "G12-AC02"
+        scenario: "Capable minor's decision prevails"
+        given: "a minor under 16 is capable of consenting"
+        when: "the minor and parent disagree"
+        then:
+          - "the minor's decision SHALL prevail per PHIPA s.23(3)"
+          
+      - id: "G12-AC03"
+        scenario: "Substitute decision-maker for incapable adult"
+        given: "an adult user lacks capacity to consent"
+        when: "consent is required"
+        then:
+          - "a substitute decision-maker per PHIPA s.26 hierarchy SHALL consent"
+          - "SDM identity SHALL be verified"
+          - "SDM SHALL consider the individual's wishes per PHIPA s.24"
+          
+      - id: "G12-AC04"
+        scenario: "Presumption of capacity"
+        given: "an individual uses the app"
+        when: "capacity is assessed"
+        then:
+          - "the individual SHALL be presumed capable per PHIPA s.21(4)"
+          - "capacity challenges require reasonable grounds per PHIPA s.21(5)"
+          
+    evidence_artifacts:
+      - "Minor consent workflow documentation"
+      - "SDM verification procedures"
+      - "Age verification implementation evidence"
+
+  # ----------------------------------------------------------------------------
+  # GATE G13: Research / Secondary Use
+  # ----------------------------------------------------------------------------
+  
+  - id: "G13"
+    name: "Research / Secondary Use"
+    description: "Research use of PHI requires ethics board approval and specific safeguards"
+    risk_level: "LOW"
+    rationale: "Research is a specialized use case with strict requirements"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.44"
+            description: "Disclosure for research"
+            
+    implementation_requirements:
+      technical:
+        - "Research data access controls"
+        - "De-identification for research"
+        - "Research audit logging"
+      policy:
+        - "Research request procedure"
+        - "Ethics board approval verification"
+        - "Research agreement template"
+        
+    acceptance_criteria:
+      - id: "G13-AC01"
+        scenario: "Research use blocked by default"
+        given: "PHI is collected for care purposes"
+        when: "research access is requested"
+        then:
+          - "access SHALL be denied by default"
+          - "research use SHALL require explicit authorization pathway"
+          
+      - id: "G13-AC02"
+        scenario: "Research disclosure requirements"
+        given: "research access is authorized"
+        when: "disclosure occurs per PHIPA s.44"
+        then:
+          - "research ethics board approval SHALL be verified"
+          - "a written research agreement SHALL exist"
+          - "the researcher SHALL agree to conditions per PHIPA s.44"
+          - "de-identified data SHALL be used where possible"
+          
+    evidence_artifacts:
+      - "Research data policy"
+      - "Research request procedure"
+      - "Ethics board approval verification process"
+      - "Research agreement template"
+
+  # ----------------------------------------------------------------------------
+  # GATE G14: Marketing / Non-care Use Prohibitions
+  # ----------------------------------------------------------------------------
+  
+  - id: "G14"
+    name: "Marketing / Non-care Use Prohibitions"
+    description: "Marketing and fundraising use of PHI is restricted and requires express consent"
+    risk_level: "LOW"
+    rationale: "Marketing is not a primary use case for this app"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.32"
+            description: "Fundraising - requires consent"
+          - section: "s.33"
+            description: "Marketing - requires express consent"
+            
+    implementation_requirements:
+      technical:
+        - "Marketing preference controls"
+        - "Separate marketing consent flag"
+      policy:
+        - "Marketing consent policy"
+        - "Opt-out mechanisms"
+        
+    acceptance_criteria:
+      - id: "G14-AC01"
+        scenario: "No marketing without express consent"
+        given: "PHI is in the system"
+        when: "marketing communications are considered"
+        then:
+          - "PHI SHALL NOT be used for marketing without express consent per PHIPA s.33"
+          - "marketing consent SHALL be separate from care consent"
+          - "users SHALL be able to opt out at any time"
+          
+      - id: "G14-AC02"
+        scenario: "Fundraising restrictions"
+        given: "the custodian considers fundraising activities"
+        when: "PHI use for fundraising is considered"
+        then:
+          - "express consent OR implied consent with limited info per PHIPA s.32 SHALL be required"
+          - "fundraising SHALL comply with prescribed requirements"
+          
+    evidence_artifacts:
+      - "Marketing consent mechanism"
+      - "Marketing opt-out evidence"
+      - "Policy prohibiting unauthorized marketing use"
+
+  # ----------------------------------------------------------------------------
+  # GATE G15: Logging, Monitoring, and Auditability
+  # ----------------------------------------------------------------------------
+  
+  - id: "G15"
+    name: "Logging, Monitoring, and Auditability"
+    description: "Maintain records of PHI access and processing for accountability"
+    risk_level: "MEDIUM"
+    rationale: "Logging enables accountability and incident investigation"
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.10.1"
+            description: "Electronic audit log"
+          - section: "s.16(2)"
+            description: "Notation of disclosures outside information practices"
+            
+    implementation_requirements:
+      technical:
+        - "Comprehensive audit logging"
+        - "Log integrity protection"
+        - "Log retention"
+        - "SIEM integration"
+      policy:
+        - "Log review procedures"
+        - "Anomaly investigation process"
+        - "Commissioner access procedures"
+        
+    acceptance_criteria:
+      - id: "G15-AC01"
+        scenario: "Comprehensive audit logging"
+        given: "PHI is accessed or processed"
+        when: "any access, modification, or disclosure occurs"
+        then:
+          - "an audit log entry SHALL be created"
+          - "the entry SHALL include: timestamp (UTC), user/system identity, action type, resource_type, resource_id, patient_id, success/failure"
+          - "logs SHALL be protected from tampering"
+          - "logs SHALL be retained for at least 10 years"
+          
+      - id: "G15-AC02"
+        scenario: "Audit log monitoring"
+        given: "audit logs are collected"
+        when: "monitoring occurs"
+        then:
+          - "logs SHALL be reviewed regularly (at least weekly)"
+          - "anomalous access patterns SHALL trigger alerts"
+          - "alerts SHALL be investigated within 24 hours"
+          
+      - id: "G15-AC03"
+        scenario: "Commissioner access to logs"
+        given: "the Commissioner requests audit logs"
+        when: "the request is received"
+        then:
+          - "logs SHALL be provided per PHIPA s.10.1(2)"
+          - "provision SHALL occur within prescribed timeframe"
+          
+      - id: "G15-AC04"
+        scenario: "Disclosure tracking"
+        given: "a disclosure without consent occurs"
+        when: "the disclosure is made"
+        then:
+          - "a notation SHALL be made per PHIPA s.16(2)"
+          - "the notation SHALL be available to the individual"
+          
+    evidence_artifacts:
+      - "Audit log schema documentation"
+      - "Log samples"
+      - "Log monitoring procedures"
+      - "Anomaly investigation records"
+      - "Log retention evidence"
+
+  # ----------------------------------------------------------------------------
+  # GATE G16: Practitioner Credentialing & Verification
+  # ----------------------------------------------------------------------------
+  
+  - id: "G16"
+    name: "Practitioner Credentialing & Verification"
+    description: "Verify that practitioners are licensed healthcare providers before enabling PHI access"
+    risk_level: "CRITICAL"
+    rationale: |
+      The Agent-of-Custodian model requires practitioners to hold custodian status under provincial health 
+      information legislation. Custodian status requires the individual to be a 'health information custodian' 
+      (ON PHIPA s.3), 'custodian' (AB HIA s.1(1)(f)), or equivalent in other provinces—typically a regulated 
+      health professional. Allowing unverified users to access PHI would break the legal authority chain and 
+      expose the company to unauthorized disclosure liability.
+    
+    legal_requirements:
+      ON:
+        references:
+          - section: "s.3(1)"
+            description: "Definition of 'health information custodian'"
+          - section: "s.17"
+            description: "Agent must act on behalf of custodian"
+      AB:
+        references:
+          - section: "s.1(1)(f)"
+            description: "Definition of 'custodian'"
+      SK:
+        references:
+          - section: "s.2(t)"
+            description: "Definition of 'trustee'"
+      MB:
+        references:
+          - section: "s.1"
+            description: "Definition of 'trustee'"
+      BC:
+        references:
+          - section: "E-Health Act s.1"
+            description: "Definition of health care body"
+            
+    implementation_requirements:
+      technical:
+        - "Practitioner registration captures: full name, license number, licensing body, province"
+        - "verification_status field: 'pending' | 'verified' | 'rejected' | 'suspended'"
+        - "PHI API endpoints check verification_status before returning data"
+        - "Verification log: verifier_id, timestamp, evidence_type, decision"
+        - "Invite code system for patient onboarding (recommended)"
+      operational:
+        - "Manual verification workflow (MVP): operator checks public registry"
+        - "Verification SLA: 2 business days"
+        - "Re-verification: annual or upon license status change notification"
+      policy:
+        - "Practitioner Verification Policy document"
+        - "Acceptable evidence types (registry lookup, license scan)"
+        - "Rejection/suspension procedure"
+        
+    acceptance_criteria:
+      - id: "G16-AC01"
+        scenario: "New practitioner cannot access PHI until verified"
+        given: "a practitioner registers for the portal"
+        when: "they attempt to view patient entries"
+        then:
+          - "the system SHALL return HTTP 403 with message 'Account pending verification'"
+          - "the practitioner SHALL see status 'Pending Verification' in their dashboard"
+          - "an audit log entry SHALL record the denied access attempt"
+          
+      - id: "G16-AC02"
+        scenario: "Verification captures required evidence"
+        given: "an operator verifies a practitioner"
+        when: "verification is performed"
+        then:
+          - "the operator SHALL confirm license number against public registry"
+          - "the verification log SHALL record: practitioner_id, verifier_id, timestamp_utc, evidence_type, registry_checked, decision"
+          - "the practitioner's verification_status SHALL change to 'verified'"
+          
+      - id: "G16-AC03"
+        scenario: "Verified practitioner can access consented patient PHI"
+        given: "a practitioner has verification_status = 'verified'"
+        when: "they query a patient's entries"
+        then:
+          - "the system SHALL check consent relationship"
+          - "if consent exists, entries SHALL be returned"
+          - "if no consent, HTTP 403 SHALL be returned"
+          
+      - id: "G16-AC04"
+        scenario: "Suspended practitioner loses PHI access"
+        given: "a practitioner's verification_status changes to 'suspended'"
+        when: "they attempt to access PHI"
+        then:
+          - "the system SHALL return HTTP 403"
+          - "existing sessions SHALL be terminated"
+          - "the practitioner SHALL be notified via email"
+          
+      - id: "G16-AC05"
+        scenario: "Invite-only patient onboarding (recommended)"
+        given: "the 'Prescription' architecture is enabled"
+        when: "a patient attempts to register"
+        then:
+          - "registration SHALL require a valid invite code"
+          - "the invite code SHALL link the patient to the issuing practitioner"
+          - "invite codes SHALL expire after 7 days or single use"
+        notes: "This is RECOMMENDED but not REQUIRED. Allows patients to onboard independently and link to practitioners later."
+        
+    evidence_artifacts:
+      - "Practitioner registration form showing required fields"
+      - "Database schema with verification_status field"
+      - "API access control code showing verification check"
+      - "Sample verification log entries"
+      - "Verification policy document"
+      - "Public registry lookup procedure (checklist)"
+      
+    failure_mode: |
+      Without G16: An attacker creates a 'practitioner' account, a patient shares PHI with them, and 
+      sensitive mental health information is disclosed to an unauthorized person. The company cannot 
+      claim 'agent' defense because the recipient was never a custodian. Breach notification required; 
+      Commissioner investigation likely; civil liability for unauthorized disclosure.
+
+  # ----------------------------------------------------------------------------
+  # GATE G17: Clinical Safety & Emergency Redirects
+  # ----------------------------------------------------------------------------
+  
+  - id: "G17"
+    name: "Clinical Safety & Emergency Redirects"
+    description: "Passive safety mechanisms that redirect users to crisis resources without implying real-time monitoring"
+    risk_level: "HIGH"
+    rationale: |
+      The app collects Safety Notes which may contain crisis content (suicidal ideation, self-harm). 
+      Two competing risks must be balanced:
+      1. Duty to warn exposure if users believe the app monitors and will intervene
+      2. Duty of care exposure if the app ignores crisis content entirely
+      
+      The solution is PASSIVE INTERRUPTION: detect potential crisis keywords, display a modal with crisis 
+      resources and explicit "we do not monitor" disclaimer, then allow user to proceed. This positions 
+      the app as a redirector, not a monitor.
+      
+    legal_basis: |
+      While no specific statute mandates this pattern, it derives from:
+      - Duty of care principles (common law)
+      - Product liability risk mitigation
+      - Professional guidelines for digital mental health tools
+      - Expectation management to avoid negligent misrepresentation
+      
+    implementation_requirements:
+      technical:
+        - "Client-side keyword detection (regex list) for crisis terms"
+        - "Crisis modal component with: disclaimer, crisis line numbers, 'Continue' button"
+        - "Static SOS button accessible from all log entry screens"
+        - "No server-side transmission of crisis detection events (privacy)"
+        - "No automated alerts to practitioners (avoids monitoring implication)"
+      policy:
+        - "Crisis keyword list (clinical review recommended)"
+        - "In-app disclaimer text"
+        - "Terms of Service: 'Not real-time monitoring' clause"
+        - "Safety Notes labeling in UI"
+        
+    acceptance_criteria:
+      - id: "G17-AC01"
+        scenario: "Crisis keyword triggers passive modal"
+        given: "a patient enters text containing crisis keywords (e.g., 'kill myself', 'end it all')"
+        when: "the user attempts to submit or navigates away"
+        then:
+          - "a modal SHALL appear before submission"
+          - "the modal SHALL display: 'We noticed you may be going through a difficult time.'"
+          - "the modal SHALL display: 'This app is NOT monitored in real time.'"
+          - "the modal SHALL display crisis line numbers (Talk Suicide Canada: 1-833-456-4566, Crisis Text Line: text HOME to 686868)"
+          - "the modal SHALL have a 'Continue' button to proceed"
+          - "the modal SHALL NOT block submission"
+          - "the detection SHALL NOT be logged to the server"
+          
+      - id: "G17-AC02"
+        scenario: "Static SOS button is always accessible"
+        given: "a patient is on any log entry screen"
+        when: "they look for emergency resources"
+        then:
+          - "a visible SOS/crisis button SHALL be present"
+          - "tapping SHALL display crisis resources immediately (no login required)"
+          - "resources SHALL include: national crisis line, text line, 911 guidance"
+          
+      - id: "G17-AC03"
+        scenario: "Safety Notes have explicit labeling"
+        given: "a patient accesses the Safety Notes feature"
+        when: "the feature loads"
+        then:
+          - "a banner SHALL display: 'Your practitioner may review this on their next login. This is not monitored in real time.'"
+          - "the banner SHALL NOT imply immediate notification"
+          
+      - id: "G17-AC04"
+        scenario: "In-app disclaimer at onboarding"
+        given: "a new patient completes registration"
+        when: "they first access the app"
+        then:
+          - "an onboarding screen SHALL include: 'This app helps you track your mental health. It is NOT a crisis service and is not monitored in real time. If you are in crisis, call 911 or a crisis line.'"
+          - "the user SHALL acknowledge before proceeding"
+          
+      - id: "G17-AC05"
+        scenario: "No affirmative alerts that imply monitoring"
+        given: "the app is designed"
+        when: "design decisions are made"
+        then:
+          - "the app SHALL NOT send push notifications saying 'Your practitioner has been alerted'"
+          - "the app SHALL NOT display 'Help is on the way'"
+          - "the app SHALL NOT promise response times to safety content"
+          
+    evidence_artifacts:
+      - "Crisis modal UI screenshots"
+      - "SOS button UI screenshots"
+      - "Crisis keyword list (documented)"
+      - "Terms of Service section: 'Not Real-Time Monitoring'"
+      - "Onboarding disclaimer screenshots"
+      - "Code review showing no server-side crisis detection logging"
+      
+    failure_mode: |
+      Without G17: A patient enters safety notes expecting intervention, no intervention occurs, harm results. 
+      Plaintiff argues app design implied monitoring. OR: app sends automated crisis alerts, practitioner 
+      does not respond, app company argued to have assumed duty to intervene.
+      
+      With G17: App explicitly disclaims monitoring, provides crisis resources, does not promise intervention. 
+      User has been informed and redirected to appropriate resources. Liability posture significantly improved.
+
+# ==============================================================================
+# ENGINEERING TICKETS
+# ==============================================================================
+
+engineering_tickets:
+  
+  backend:
+    - id: "BE-001"
+      title: "Implement Consent Management System"
+      gate_reference: "G2"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.18-19, AB HIA s.34, MB PHIA s.19.1-19.2, SK HIPA s.5-7"
+      description: "Build a consent management system that captures, stores, and manages patient consent for PHI collection, use, and disclosure."
+      requirements:
+        - "Consent capture with purpose statement display"
+        - "Consent versioning (track which version was agreed to)"
+        - "Timestamp all consent events in UTC"
+        - "Consent withdrawal mechanism (non-retroactive)"
+        - "Consent audit trail (immutable)"
+        - "Province-specific consent text variations"
+      acceptance_criteria:
+        - "Consent record includes: user_id, consent_type, consent_version, timestamp_utc, ip_address, method"
+        - "Withdrawal does not delete historical data"
+        - "API returns consent status for any user"
+        
+    - id: "BE-002"
+      title: "Implement Role-Based Access Control for Practitioners"
+      gate_reference: "G4, G6"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.17, s.30, SK HIPA s.23"
+      description: "Implement RBAC ensuring practitioners can only access PHI for patients who have consented to share with them."
+      requirements:
+        - "Practitioner-patient relationship table"
+        - "Access check on every PHI query"
+        - "Denied access logging"
+        - "Session management with timeout"
+      acceptance_criteria:
+        - "Practitioner query for patient without consent relationship returns 403"
+        - "All access attempts are logged"
+        - "Session expires after 30 minutes idle"
+        
+    - id: "BE-003"
+      title: "Implement Comprehensive Audit Logging"
+      gate_reference: "G15"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.10.1, s.16(2)"
+      description: "Build comprehensive audit logging for all PHI access and processing."
+      requirements:
+        - "Log all: reads, writes, updates, deletes, exports, disclosures"
+        - "Log fields: timestamp_utc, user_id, action, resource_type, resource_id, patient_id, success, ip_address, user_agent"
+        - "Immutable log storage (append-only)"
+        - "Log retention: minimum 10 years"
+        - "Log export capability for Commissioner requests"
+      acceptance_criteria:
+        - "Every API call touching PHI creates audit log entry"
+        - "Logs cannot be modified or deleted"
+        - "Log export produces Commissioner-ready format"
+        
+    - id: "BE-004"
+      title: "Implement Breach Detection and Response System"
+      gate_reference: "G7"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.12(2-3), AB HIA s.60.1"
+      description: "Build system for detecting potential breaches and managing incident response."
+      requirements:
+        - "Anomaly detection for access patterns"
+        - "Failed authentication monitoring"
+        - "Incident ticket creation workflow"
+        - "Notification queue for affected individuals"
+        - "Regulatory notification templates"
+      acceptance_criteria:
+        - "Anomalous access triggers alert within 1 hour"
+        - "Incident creates ticket with required fields"
+        - "Notification templates include all required content"
+        
+    - id: "BE-005"
+      title: "Implement Patient Data Export (Access Rights)"
+      gate_reference: "G5"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.52-54, MB PHIA s.5-7"
+      description: "Enable patients to export all their PHI in a portable format."
+      requirements:
+        - "Export all log entries for patient"
+        - "Export account information"
+        - "Export consent history"
+        - "Export disclosure log"
+        - "Formats: JSON, PDF"
+      acceptance_criteria:
+        - "Export includes all PHI for patient"
+        - "Export completes within 30 seconds"
+        - "PDF is human-readable"
+        
+    - id: "BE-006"
+      title: "Implement Encryption at Rest"
+      gate_reference: "G6"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.12(1), MB PHIA s.18"
+      description: "Encrypt all PHI at rest in the database."
+      requirements:
+        - "AES-256 encryption for PHI columns"
+        - "Key management via HSM or cloud KMS"
+        - "Key rotation capability (annual minimum)"
+        - "Encryption verification"
+      acceptance_criteria:
+        - "PHI columns are encrypted in storage"
+        - "Keys are not stored in application code"
+        - "Key rotation does not cause downtime"
+
+    # G16 Backend Tickets - Practitioner Credentialing
+    - id: "BE-G16-001"
+      title: "Add verification_status to practitioners table"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Add verification status field to practitioners table to track credentialing state."
+      requirements:
+        - "Add enum field: pending, verified, rejected, suspended"
+        - "Default value: 'pending'"
+        - "Add verification_date timestamp"
+        - "Add verified_by field (operator ID)"
+      acceptance_criteria:
+        - "Field exists with correct enum values"
+        - "New practitioner accounts default to 'pending'"
+        - "Migration runs without data loss"
+
+    - id: "BE-G16-002"
+      title: "PHI API verification status middleware"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Block PHI queries from practitioners who are not verified."
+      requirements:
+        - "Middleware checks verification_status on all PHI endpoints"
+        - "Return HTTP 403 for non-verified practitioners"
+        - "Include clear error message: 'Account pending verification'"
+        - "Log all denied access attempts"
+      acceptance_criteria:
+        - "GET /api/logs returns 403 for unverified practitioner"
+        - "GET /api/patients returns 403 for unverified practitioner"
+        - "Audit log entry created on denial"
+        - "Verified practitioner can access consented data"
+
+    - id: "BE-G16-003"
+      title: "Practitioner verification log table"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Create audit table for practitioner verification events."
+      requirements:
+        - "Fields: id, practitioner_id, verifier_id, timestamp_utc, evidence_type, registry_checked, decision, notes"
+        - "Immutable (no updates/deletes)"
+        - "Foreign key to practitioners table"
+      acceptance_criteria:
+        - "Table created with all required fields"
+        - "Verification creates log entry"
+        - "Cannot update or delete existing entries"
+
+    - id: "BE-G16-004"
+      title: "Invite code system for patient onboarding"
+      gate_reference: "G16"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.17"
+      description: "Generate invite codes linked to practitioners for patient registration (recommended)."
+      requirements:
+        - "Generate unique invite codes"
+        - "Link code to issuing practitioner"
+        - "Expiry after 7 days or single use"
+        - "Validate code on patient registration"
+      acceptance_criteria:
+        - "Practitioner can generate invite codes"
+        - "Patient registration accepts valid code"
+        - "Expired/used codes rejected"
+        - "Patient auto-linked to practitioner on registration"
+
+    - id: "BE-G16-005"
+      title: "Practitioner suspension workflow"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Implement immediate suspension of practitioner access when verification status changes."
+      requirements:
+        - "API endpoint to suspend practitioner"
+        - "Terminate all active sessions on suspension"
+        - "Send notification email to practitioner"
+        - "Log suspension event"
+      acceptance_criteria:
+        - "Suspended practitioner immediately loses access"
+        - "Active sessions terminated within 1 minute"
+        - "Email notification sent"
+        - "Audit log records suspension"
+
+    # G17 Backend Tickets - Clinical Safety
+    - id: "BE-G17-001"
+      title: "Verify no server-side crisis keyword logging"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Privacy by design principles"
+      description: "Ensure crisis keyword detection is client-side only and not logged to server."
+      requirements:
+        - "Review all API endpoints for crisis-related logging"
+        - "Confirm no endpoint captures crisis detection events"
+        - "Document architecture decision"
+      acceptance_criteria:
+        - "Code review confirms no crisis detection logging"
+        - "API audit shows no crisis-related parameters"
+        - "Architecture decision record created"
+        
+  frontend:
+    - id: "FE-001"
+      title: "Consent Capture UI"
+      gate_reference: "G2"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.18(5-6)"
+      description: "Build consent capture screens with clear purpose statements and opt-in controls."
+      requirements:
+        - "Display consent text clearly"
+        - "Link to full privacy policy"
+        - "No pre-checked boxes"
+        - "Clear 'I Agree' / 'I Do Not Agree' buttons"
+        - "Province-specific text loading"
+      acceptance_criteria:
+        - "Consent text is visible without scrolling"
+        - "Checkboxes are unchecked by default"
+        - "Both agree and disagree paths work"
+        
+    - id: "FE-002"
+      title: "Patient Sharing Controls"
+      gate_reference: "G4"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.18(3), s.19"
+      description: "Build UI for patients to control what they share with practitioners."
+      requirements:
+        - "Practitioner selection"
+        - "Log type selection"
+        - "Date range selection"
+        - "Revoke sharing button"
+        - "Sharing status display"
+      acceptance_criteria:
+        - "Patient can select specific practitioners"
+        - "Patient can limit to specific log types"
+        - "Revocation is immediate"
+        
+    - id: "FE-003"
+      title: "Patient Data Access and Export UI"
+      gate_reference: "G5"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.52"
+      description: "Build UI for patients to view and export their data."
+      requirements:
+        - "View all log entries"
+        - "View consent history"
+        - "View disclosure log"
+        - "Export button (JSON/PDF)"
+      acceptance_criteria:
+        - "All patient data is visible"
+        - "Export downloads within 30 seconds"
+        
+    - id: "FE-004"
+      title: "Correction Request UI"
+      gate_reference: "G5"
+      priority: "P2"
+      priority_label: "Medium"
+      legal_citation: "ON PHIPA s.55"
+      description: "Build UI for patients to request corrections to their PHI."
+      requirements:
+        - "Identify record to correct"
+        - "Describe requested correction"
+        - "Submit request"
+        - "Track request status"
+      acceptance_criteria:
+        - "Request creates ticket in system"
+        - "Patient sees status updates"
+
+    # G16 Frontend Tickets - Practitioner Credentialing
+    - id: "FE-G16-001"
+      title: "Practitioner pending verification UI"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Show pending verification status to unverified practitioners."
+      requirements:
+        - "Banner showing 'Account Pending Verification' status"
+        - "Disable patient list and PHI views"
+        - "Show estimated verification timeline"
+        - "Provide contact for questions"
+      acceptance_criteria:
+        - "Banner visible on all portal pages for pending accounts"
+        - "Patient queries blocked in UI layer"
+        - "Clear messaging about verification process"
+
+    - id: "FE-G16-002"
+      title: "Practitioner registration credential fields"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1)"
+      description: "Capture required credential information during practitioner registration."
+      requirements:
+        - "License number field (required)"
+        - "Licensing body dropdown (e.g., CPSO, CPSA, CPSBC)"
+        - "Province of licensure"
+        - "Professional designation"
+      acceptance_criteria:
+        - "Cannot submit without license number"
+        - "Licensing body validated against province"
+        - "Data saved to practitioner profile"
+
+    # G17 Frontend Tickets - Clinical Safety
+    - id: "FE-G17-001"
+      title: "Crisis modal component"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Build modal that appears when crisis keywords are detected in text input."
+      requirements:
+        - "Modal displays empathetic message"
+        - "Modal displays 'NOT monitored in real time' disclaimer"
+        - "Modal displays crisis line numbers (Talk Suicide Canada, Crisis Text Line)"
+        - "'Continue' button to proceed with submission"
+        - "Modal does not block submission"
+        - "No server-side logging of trigger event"
+      acceptance_criteria:
+        - "Modal appears on keyword match"
+        - "All required content displayed"
+        - "Continue button works"
+        - "No network request on modal trigger"
+
+    - id: "FE-G17-002"
+      title: "Crisis keyword regex list"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Maintain and document list of crisis-indicative keywords for client-side detection."
+      requirements:
+        - "Regex patterns for crisis terms"
+        - "Include: suicidal ideation, self-harm, harm to others indicators"
+        - "Document patterns and rationale"
+        - "Clinical review recommended"
+      acceptance_criteria:
+        - "Keyword list documented"
+        - "Regex patterns tested"
+        - "False positive rate acceptable"
+
+    - id: "FE-G17-003"
+      title: "Static SOS button"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Always-visible button linking to crisis resources on all log entry screens."
+      requirements:
+        - "Visible on all log entry forms"
+        - "Works without login"
+        - "Displays crisis resources immediately"
+        - "Includes national crisis line, text line, 911 guidance"
+      acceptance_criteria:
+        - "Button visible on mood, anxiety, sleep, safety note forms"
+        - "Tap displays resources without delay"
+        - "Resources accurate and up-to-date"
+
+    - id: "FE-G17-004"
+      title: "Safety Notes disclaimer banner"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Display disclaimer banner on Safety Notes entry screen."
+      requirements:
+        - "Banner text: 'Your practitioner may review this on their next login. This is not monitored in real time.'"
+        - "Visible at top of Safety Notes form"
+        - "Cannot be dismissed"
+      acceptance_criteria:
+        - "Banner visible on Safety Notes screen"
+        - "Text matches requirement exactly"
+        - "Banner persists during entry"
+
+    - id: "FE-G17-005"
+      title: "Onboarding disclaimer screen"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Display crisis disclaimer during new patient onboarding."
+      requirements:
+        - "Screen during first-time user flow"
+        - "Text: 'This app helps you track your mental health. It is NOT a crisis service and is not monitored in real time. If you are in crisis, call 911 or a crisis line.'"
+        - "User must acknowledge to proceed"
+        - "Record acknowledgment timestamp"
+      acceptance_criteria:
+        - "Screen appears on first launch after registration"
+        - "Cannot proceed without acknowledgment"
+        - "Acknowledgment logged with timestamp"
+        
+  infrastructure:
+    - id: "INFRA-001"
+      title: "Configure TLS 1.2+ Only"
+      gate_reference: "G6"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.12(1)"
+      description: "Configure all endpoints to use TLS 1.2 or higher only."
+      requirements:
+        - "Disable TLS 1.0, 1.1"
+        - "Disable weak cipher suites"
+        - "Configure HSTS"
+        - "Implement certificate monitoring"
+      acceptance_criteria:
+        - "SSL Labs score of A or higher"
+        - "No weak protocols or ciphers"
+        
+    - id: "INFRA-002"
+      title: "Implement Log Aggregation and Retention"
+      gate_reference: "G15"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.10.1"
+      description: "Set up centralized log aggregation with long-term retention."
+      requirements:
+        - "Aggregate all audit logs"
+        - "Immutable storage (e.g., S3 with Object Lock)"
+        - "10-year retention"
+        - "Log integrity verification"
+      acceptance_criteria:
+        - "All audit logs flow to central system"
+        - "Logs cannot be deleted for 10 years"
+        - "Integrity hash is computed"
+        
+    - id: "INFRA-003"
+      title: "Configure Data Residency"
+      gate_reference: "G10"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.50, PE HIA s.35"
+      description: "Ensure PHI is stored in Canadian data centers."
+      requirements:
+        - "Primary database in Canada"
+        - "Backups in Canada"
+        - "Document all storage locations"
+        - "Prevent accidental non-Canadian replication"
+      acceptance_criteria:
+        - "All PHI storage is in Canadian regions"
+        - "Documentation lists all locations"
+        
+  security:
+    - id: "SEC-001"
+      title: "Implement Multi-Factor Authentication for Practitioners"
+      gate_reference: "G6"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.12(1)"
+      description: "Require MFA for all practitioner accounts."
+      requirements:
+        - "TOTP or hardware key support"
+        - "MFA enrollment workflow"
+        - "Recovery flow"
+        - "MFA enforcement policy"
+      acceptance_criteria:
+        - "Practitioners cannot access portal without MFA"
+        - "MFA recovery does not bypass security"
+        
+    - id: "SEC-002"
+      title: "Implement Vulnerability Scanning"
+      gate_reference: "G6"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.12(1)"
+      description: "Set up automated vulnerability scanning."
+      requirements:
+        - "Monthly automated scans"
+        - "Integration with ticketing"
+        - "SLA for remediation"
+        - "Scan reports retained"
+      acceptance_criteria:
+        - "Scans run monthly"
+        - "Critical vulns create P0 tickets"
+
+  # G16/G17 Operations Tickets
+  operations:
+    - id: "OPS-G16-001"
+      title: "Practitioner verification procedure"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Document manual verification steps for practitioner credentialing."
+      requirements:
+        - "Step-by-step verification checklist"
+        - "Public registry lookup procedure for each province"
+        - "Decision criteria for approval/rejection"
+        - "Escalation path for unclear cases"
+      acceptance_criteria:
+        - "Written procedure document exists"
+        - "Checklist covers all required verifications"
+        - "Registry URLs documented for each licensing body"
+
+    - id: "OPS-G16-002"
+      title: "Verification tracking spreadsheet"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Create spreadsheet to track verification status (MVP approach)."
+      requirements:
+        - "Columns: practitioner_id, name, license_number, licensing_body, registry_url, verified_by, date, evidence, decision"
+        - "Template ready for immediate use"
+        - "Secure storage (access controlled)"
+      acceptance_criteria:
+        - "Spreadsheet created with required columns"
+        - "First verification logged successfully"
+        - "Access limited to authorized operators"
+
+    - id: "OPS-G16-003"
+      title: "Verification SLA monitoring"
+      gate_reference: "G16"
+      priority: "P1"
+      priority_label: "High"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Monitor verification completion within 2 business day SLA."
+      requirements:
+        - "Track time from registration to verification"
+        - "Alert if approaching SLA breach"
+        - "Weekly report on verification metrics"
+      acceptance_criteria:
+        - "SLA compliance tracked"
+        - "Report shows average verification time"
+
+  # G16/G17 Policy Tickets
+  policy:
+    - id: "POL-G16-001"
+      title: "Practitioner Verification Policy"
+      gate_reference: "G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.3(1), s.17"
+      description: "Document practitioner verification policy."
+      requirements:
+        - "Purpose statement"
+        - "Verification process description"
+        - "Acceptable evidence types"
+        - "Rejection/suspension criteria"
+        - "Re-verification requirements (annual)"
+        - "Appeal process"
+      acceptance_criteria:
+        - "Policy document published"
+        - "Covers all required elements"
+        - "Reviewed by legal (recommended)"
+
+    - id: "POL-G17-001"
+      title: "Terms of Service update - Not Real-Time Monitoring"
+      gate_reference: "G17"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "Duty of care principles"
+      description: "Add section to Terms of Service disclaiming real-time monitoring."
+      requirements:
+        - "Clear statement app is not monitored in real time"
+        - "Statement app is not a crisis service"
+        - "Crisis line numbers and 911 guidance"
+        - "User acknowledgment required"
+      acceptance_criteria:
+        - "ToS updated with new section"
+        - "Legal review completed"
+        - "Users prompted to accept updated ToS"
+
+    - id: "POL-G09-001"
+      title: "Practitioner Agreement template"
+      gate_reference: "G9, G16"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA s.17"
+      description: "Create click-wrap agreement for practitioners establishing agent relationship."
+      requirements:
+        - "Custodian role acknowledgment"
+        - "Agent relationship description"
+        - "Compliance obligations"
+        - "Breach notification requirements"
+        - "Verification consent"
+      acceptance_criteria:
+        - "Agreement template ready"
+        - "Click-wrap acceptance flow implemented"
+        - "Acceptance logged with timestamp"
+
+    - id: "POL-G02-001"
+      title: "Privacy Policy - Privacy Officer contact"
+      gate_reference: "G2, G7"
+      priority: "P0"
+      priority_label: "Critical"
+      legal_citation: "ON PHIPA, AB HIA, all provincial acts"
+      description: "Publish Privacy Officer contact information in privacy policy and in-app."
+      requirements:
+        - "Designate Privacy Officer"
+        - "Email address for privacy inquiries"
+        - "Physical mailing address"
+        - "Provincial commissioner contact links"
+      acceptance_criteria:
+        - "Privacy policy updated"
+        - "In-app 'Privacy Questions' link added"
+        - "Contact info accurate and monitored"
+
+# ==============================================================================
+# OPERATIONAL RUNBOOKS
+# ==============================================================================
+
+runbooks:
+  
+  - id: "OPS-RUNBOOK-001"
+    title: "Breach Response Playbook"
+    gate_reference: "G7"
+    legal_citation: "ON PHIPA s.12, AB HIA s.60.1"
+    trigger: "Suspected or confirmed privacy breach"
+    steps:
+      - phase: "Detection"
+        timeline: "0-1 hour"
+        actions:
+          - "Verify breach is real"
+          - "Document initial findings"
+          - "Escalate to Privacy Officer"
+      - phase: "Containment"
+        timeline: "1-4 hours"
+        actions:
+          - "Isolate affected systems"
+          - "Revoke compromised credentials"
+          - "Preserve evidence"
+      - phase: "Investigation"
+        timeline: "4-48 hours"
+        actions:
+          - "Determine scope (which patients, what data)"
+          - "Determine cause"
+          - "Assess risk of harm (use AB HIA Chapter 14 factors)"
+      - phase: "Notification Assessment"
+        timeline: "48-72 hours"
+        actions:
+          - "Determine if notification required"
+          - "Prepare notification content"
+          - "Identify notification recipients"
+      - phase: "Notification Execution"
+        timeline: "72+ hours"
+        actions:
+          - "Notify affected individuals (first reasonable opportunity)"
+          - "Notify Commissioner (if thresholds met)"
+          - "Notify Minister (AB only)"
+          - "Notify custodian clients"
+      - phase: "Remediation"
+        timeline: "Ongoing"
+        actions:
+          - "Fix root cause"
+          - "Update controls"
+          - "Document lessons learned"
+    templates:
+      - "Individual notification letter"
+      - "Commissioner notification form"
+      - "Risk of harm assessment worksheet"
+      
+  - id: "OPS-RUNBOOK-002"
+    title: "Patient Access Request Handling"
+    gate_reference: "G5"
+    legal_citation: "ON PHIPA s.52-54, MB PHIA s.5-7"
+    trigger: "Patient requests access to their PHI"
+    sla_days: 30
+    steps:
+      - phase: "Receive Request"
+        timeline: "Day 0"
+        actions:
+          - "Log request in tracking system"
+          - "Verify patient identity"
+          - "Acknowledge receipt"
+      - phase: "Gather Records"
+        timeline: "Days 1-20"
+        actions:
+          - "Query all patient data"
+          - "Include consent records"
+          - "Include disclosure log"
+      - phase: "Review for Exceptions"
+        timeline: "Days 20-25"
+        actions:
+          - "Check if any exceptions apply (risk of harm, third party info)"
+          - "Consult legal if needed"
+      - phase: "Prepare Response"
+        timeline: "Days 25-28"
+        actions:
+          - "Compile data export"
+          - "Prepare cover letter"
+          - "Document any redactions"
+      - phase: "Deliver Response"
+        timeline: "Day 30 max"
+        actions:
+          - "Send data to patient via secure method"
+          - "Log completion"
+          
+  - id: "OPS-RUNBOOK-003"
+    title: "Patient Correction Request Handling"
+    gate_reference: "G5"
+    legal_citation: "ON PHIPA s.55"
+    trigger: "Patient requests correction of their PHI"
+    sla_days: 30
+    steps:
+      - phase: "Receive Request"
+        timeline: "Day 0"
+        actions:
+          - "Log request"
+          - "Verify identity"
+          - "Acknowledge receipt"
+      - phase: "Investigate"
+        timeline: "Days 1-20"
+        actions:
+          - "Review original record"
+          - "Assess accuracy of original vs requested correction"
+          - "Consult source if needed"
+      - phase: "Decision"
+        timeline: "Days 20-25"
+        actions:
+          - "If granted: Make correction, notify linked parties"
+          - "If denied: Prepare reasons, attach patient's statement of disagreement"
+      - phase: "Respond"
+        timeline: "Day 30 max"
+        actions:
+          - "Notify patient of decision"
+          - "Provide reasons if denied"
+
+  - id: "OPS-RUNBOOK-004"
+    title: "Practitioner Verification Playbook"
+    gate_reference: "G16"
+    legal_citation: "ON PHIPA s.3(1), s.17"
+    trigger: "New practitioner registration"
+    sla_days: 2
+    steps:
+      - phase: "Receive Registration"
+        timeline: "Day 0"
+        actions:
+          - "New practitioner record created with status 'pending'"
+          - "Notification sent to verification queue"
+          - "Welcome email sent to practitioner with verification timeline"
+      - phase: "Credential Lookup"
+        timeline: "Day 0-1"
+        actions:
+          - "Access public registry for stated licensing body"
+          - "Search for license number"
+          - "Confirm name matches registration"
+          - "Confirm license is active and in good standing"
+          - "Screenshot evidence"
+      - phase: "Decision"
+        timeline: "Day 1-2"
+        actions:
+          - "If verified: Update status to 'verified', log evidence, send confirmation email"
+          - "If unable to verify: Request additional information from practitioner"
+          - "If rejected: Update status to 'rejected', document reason, send notification"
+      - phase: "Completion"
+        timeline: "Day 2 max"
+        actions:
+          - "Update verification log with all details"
+          - "Close verification ticket"
+    registry_urls:
+      ON: "https://doctors.cpso.on.ca/"
+      AB: "https://search.cpsa.ca/"
+      BC: "https://www.cpsbc.ca/public/registrant-directory"
+      SK: "https://www.cps.sk.ca/imis/CPSS/Registry/CPSS/Registry.aspx"
+      MB: "https://cpsm.mb.ca/member-search"
+      NB: "https://cpsnb.org/en/physician-search"
+      NS: "https://cpsns.ns.ca/physician-search/"
+      PE: "https://cpspei.ca/find-a-physician/"
+      NL: "https://www.cpsnl.ca/default.asp?com=PublicRegister"
+
+  - id: "OPS-RUNBOOK-005"
+    title: "Practitioner Suspension Playbook"
+    gate_reference: "G16"
+    legal_citation: "ON PHIPA s.3(1), s.17"
+    trigger: "License status change, complaint, or verification failure"
+    steps:
+      - phase: "Trigger Assessment"
+        timeline: "0-1 hour"
+        actions:
+          - "Confirm trigger is valid (license revoked, suspended, complaint received)"
+          - "Document reason for suspension"
+          - "Escalate to Privacy Officer if needed"
+      - phase: "Immediate Suspension"
+        timeline: "1-2 hours"
+        actions:
+          - "Update practitioner status to 'suspended'"
+          - "Terminate all active sessions"
+          - "Send suspension notification email"
+          - "Log suspension in verification log"
+      - phase: "Patient Notification Assessment"
+        timeline: "24-48 hours"
+        actions:
+          - "Assess if patients need to be notified"
+          - "If practitioner posed risk, consider breach notification path"
+      - phase: "Resolution"
+        timeline: "Ongoing"
+        actions:
+          - "If license restored: Re-verify and restore access"
+          - "If permanent: Retain records per retention policy"
+
+# ==============================================================================
+# MISSING SOURCES & AMBIGUITIES
+# ==============================================================================
+
+missing_sources:
+  # OBTAINED ITEMS (for reference)
+  obtained_sources:
+    - item: "Personal Information Protection Act (PIPA)"
+      province: "BC"
+      status: "OBTAINED"
+      citation: "SBC 2003, c. 63"
+      
+    - item: "Health Information Act (full statute text)"
+      province: "AB"
+      status: "OBTAINED"
+      citation: "RSA 2000, c. H-5"
+      
+    - item: "Newfoundland PHIA (full Act)"
+      province: "NL"
+      status: "OBTAINED"
+      citation: "SNL 2008, c. P-7.01"
+      
+    - item: "Quebec Private Sector Privacy Act"
+      province: "QC"
+      status: "OBTAINED"
+      citation: "P-39.1"
+      
+    - item: "Nova Scotia PHIA"
+      province: "NS"
+      status: "OBTAINED"
+      citation: "Chapter 41 of the Acts of 2010"
+      
+    - item: "Federal PIPEDA"
+      province: "Federal"
+      status: "OBTAINED"
+      citation: "S.C. 2000, c. 5"
+  
+  # STILL MISSING
+  still_missing:
+    - item: "Regulations under each Act"
+      province: "All"
+      impact: "Specific requirements often in regulations"
+      recommended_action: "Obtain all applicable regulations"
+      
+    - item: "Professional college guidelines"
+      province: "All"
+      impact: "May impose additional requirements on practitioners"
+      recommended_action: "Obtain college privacy guidelines"
+      
+    - item: "Commissioner guidance/orders"
+      province: "All"
+      impact: "Interpretive guidance"
+      recommended_action: "Review OIPC guidance documents"
+      
+    - item: "Northwest Territories HIPA"
+      province: "NWT"
+      impact: "Territory not in corpus"
+      recommended_action: "Assess if applicable to user base"
+      
+    - item: "Nunavut health privacy legislation"
+      province: "NU"
+      impact: "Territory not in corpus"
+      recommended_action: "Assess if applicable to user base"
+      
+    - item: "Yukon health privacy legislation"
+      province: "YT"
+      impact: "Territory not in corpus"
+      recommended_action: "Assess if applicable to user base"
+      
+    - item: "Alberta PIPA (private sector)"
+      province: "AB"
+      impact: "Private sector privacy distinct from HIA"
+      recommended_action: "Obtain RSA 2000, c. P-6.5"
+
+ambiguities:
+  - id: "AMB-001"
+    question: "App Company as Agent vs. Custodian"
+    description: "Is the app company an 'agent' of the practitioner-custodian, or a separate custodian?"
+    impact: "Affects liability allocation and consent requirements"
+    recommendation: "Structure as agent to leverage custodian relationship"
+    requires_legal_opinion: true
+    
+  - id: "AMB-002"
+    question: "Multi-Provincial Operation"
+    description: "When a patient is in Province A and practitioner in Province B, which law applies?"
+    impact: "Determines applicable compliance requirements"
+    recommendation: "Apply strictest standard; obtain legal opinion"
+    requires_legal_opinion: true
+    
+  - id: "AMB-003"
+    question: "Implied Consent for Circle of Care"
+    description: "Does patient-initiated sharing to their practitioner qualify as 'implied consent' for health care purposes?"
+    impact: "ON PHIPA s.20(2) suggests yes, but express consent is safer"
+    recommendation: "Obtain express consent to eliminate ambiguity"
+    requires_legal_opinion: false
+    
+  - id: "AMB-004"
+    question: "Health Number Collection"
+    description: "Is provincial health number required for this app?"
+    impact: "If collected, special restrictions apply (ON PHIPA s.34, AB HIA s.21)"
+    recommendation: "Avoid collecting health numbers unless necessary"
+    requires_legal_opinion: false
+    
+  - id: "AMB-005"
+    question: "De-identification Standard"
+    description: "What specific methods satisfy 'de-identification' under each province's definition?"
+    impact: "ON PHIPA s.2 requires removal of information 'reasonably foreseeable' to identify"
+    recommendation: "Use established standards (e.g., HIPAA Safe Harbor or Expert Determination equivalent)"
+    requires_legal_opinion: false
+    
+  - id: "AMB-006"
+    question: "Cross-Border Practitioner Access"
+    description: "If a practitioner licensed in one province accesses patient data from another province, which province's law applies?"
+    impact: "Determines which compliance requirements apply"
+    recommendation: "Document patient's province of residence; apply that province's law"
+    requires_legal_opinion: true
+
+assumptions:
+  - assumption: "App company operates as agent of custodian"
+    rationale: "Typical SaaS model; aligns with legislation structure"
+    risk_if_incorrect: "Higher liability if deemed separate custodian"
+    
+  - assumption: "All data storage in Canada"
+    rationale: "Simplifies cross-border compliance"
+    risk_if_incorrect: "Would need cross-border assessments"
+    
+  - assumption: "Mental health log entries constitute PHI"
+    rationale: "Conservative interpretation; clearly relates to mental health"
+    risk_if_incorrect: "Lower compliance burden if incorrect"
+    
+  - assumption: "Practitioners are licensed health care providers"
+    rationale: "Required for custodian status"
+    risk_if_incorrect: "App may not be usable by unlicensed providers"
+    
+  - assumption: "Patients are capable adults unless otherwise indicated"
+    rationale: "Presumption of capacity in legislation"
+    risk_if_incorrect: "Need minor/incapacity workflows"
+    
+  - assumption: "No research use intended"
+    rationale: "Simplifies compliance"
+    risk_if_incorrect: "Would need research ethics pathway if incorrect"
+    
+  - assumption: "Primary purpose is providing health care"
+    rationale: "Enables certain implied consent pathways"
+    risk_if_incorrect: "Would need different consent model if incorrect"
+
+# ==============================================================================
+# DOCUMENT CONTROL
+# ==============================================================================
+
+document_control:
+  version: "2.0"
+  date: "2026-02-04"
+  author: "Compliance Engineering"
+  changes:
+    - version: "2.0"
+      date: "2026-02-04"
+      description: |
+        MAJOR: Added Gate G16 (Practitioner Credentialing & Verification) - CRITICAL gate requiring 
+        verification of practitioner credentials before PHI access. Added Gate G17 (Clinical Safety & 
+        Emergency Redirects) - HIGH priority gate for passive crisis intervention and disclaimers.
+        Added engineering tickets: BE-G16-001 through BE-G16-005, BE-G17-001, FE-G16-001 through FE-G16-002,
+        FE-G17-001 through FE-G17-005, OPS-G16-001 through OPS-G16-003, POL-G16-001, POL-G17-001, 
+        POL-G09-001, POL-G02-001. Added runbooks: OPS-RUNBOOK-004 (Practitioner Verification Playbook),
+        OPS-RUNBOOK-005 (Practitioner Suspension Playbook). Includes provincial registry URLs for 
+        credential verification.
+      description: "Initial release"
