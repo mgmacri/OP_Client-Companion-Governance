@@ -7,7 +7,7 @@
 
 ---
 
-## �️ Threat Modeling
+## Threat Modeling
 
 This project implements comprehensive threat modeling using industry-standard frameworks to protect sensitive mental health PHI.
 
