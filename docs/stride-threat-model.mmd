@@ -1,0 +1,130 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#dc3545', 'primaryTextColor': '#fff', 'primaryBorderColor': '#a71d2a', 'lineColor': '#6c757d', 'secondaryColor': '#ffc107', 'tertiaryColor': '#17a2b8'}}}%%
+
+flowchart TB
+    subgraph Title["🛡️ STRIDE Threat Model - Mental Health Client Companion"]
+        direction TB
+    end
+
+    subgraph Legend["📚 STRIDE Categories"]
+        direction LR
+        S["🎭 S - Spoofing<br/>Identity threats"]
+        T["✏️ T - Tampering<br/>Data integrity"]
+        R["📝 R - Repudiation<br/>Audit/accountability"]
+        I["🔓 I - Information Disclosure<br/>Confidentiality"]
+        D["⛔ D - Denial of Service<br/>Availability"]
+        E["⬆️ E - Elevation of Privilege<br/>Authorization"]
+    end
+
+    subgraph ClientLayer["🖥️ Client Layer Attack Surface"]
+        direction TB
+        
+        subgraph S1["🎭 SPOOFING THREATS"]
+            S1_1["S1.1 - Session Hijacking<br/>━━━━━━━━━━━━━━<br/>Attack: Steal JWT tokens from<br/>localStorage/memory<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• HttpOnly secure cookies<br/>• Token rotation<br/>• Device fingerprinting"]
+            
+            S1_2["S1.2 - Client Impersonation<br/>━━━━━━━━━━━━━━<br/>Attack: Fake mobile app<br/>submits malicious data<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• App attestation (Play Integrity)<br/>• Certificate pinning<br/>• Client-side integrity checks"]
+            
+            S1_3["S1.3 - Therapist Impersonation<br/>━━━━━━━━━━━━━━<br/>Attack: Attacker poses as<br/>licensed therapist<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Credential verification (G16)<br/>• MFA enforcement<br/>• Regulatory body validation"]
+        end
+        
+        subgraph T1["✏️ TAMPERING THREATS"]
+            T1_1["T1.1 - Local Queue Manipulation<br/>━━━━━━━━━━━━━━<br/>Attack: Modify encrypted<br/>IndexedDB entries<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• AES-256-GCM encryption<br/>• HMAC integrity verification<br/>• Server-side validation"]
+            
+            T1_2["T1.2 - Form Data Injection<br/>━━━━━━━━━━━━━━<br/>Attack: XSS/injection via<br/>mood diary fields<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Input sanitization<br/>• CSP headers<br/>• Schema validation (AJV)"]
+            
+            T1_3["T1.3 - Consent Record Tampering<br/>━━━━━━━━━━━━━━<br/>Attack: Modify consent<br/>timestamps or status<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Immutable consent log<br/>• Server-authoritative timestamps<br/>• Blockchain anchoring (future)"]
+        end
+    end
+
+    subgraph TransportLayer["🔄 Transport Layer Attack Surface"]
+        direction TB
+        
+        subgraph I1["🔓 INFORMATION DISCLOSURE"]
+            I1_1["I1.1 - Man-in-the-Middle<br/>━━━━━━━━━━━━━━<br/>Attack: Intercept PHI during<br/>sync to backend<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• TLS 1.3 mandatory<br/>• Certificate pinning<br/>• HSTS preloading"]
+            
+            I1_2["I1.2 - API Response Leakage<br/>━━━━━━━━━━━━━━<br/>Attack: Error messages<br/>expose sensitive data<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Sanitized error responses<br/>• No stack traces in production<br/>• Generic error codes"]
+            
+            I1_3["I1.3 - Metadata Exposure<br/>━━━━━━━━━━━━━━<br/>Attack: HTTP headers reveal<br/>client/therapist patterns<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Minimal headers<br/>• Padding/timing normalization<br/>• Traffic analysis resistance"]
+        end
+        
+        subgraph D1["⛔ DENIAL OF SERVICE"]
+            D1_1["D1.1 - API Rate Exhaustion<br/>━━━━━━━━━━━━━━<br/>Attack: Flood POST /api/logs<br/>with fake submissions<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Rate limiting per client<br/>• Queue depth limits (50 max)<br/>• WAF protection"]
+            
+            D1_2["D1.2 - Offline Queue Overflow<br/>━━━━━━━━━━━━━━<br/>Attack: Fill local queue to<br/>prevent legitimate entries<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• 50 item queue limit<br/>• FIFO eviction policy<br/>• User notification on full"]
+            
+            D1_3["D1.3 - Sync Storm<br/>━━━━━━━━━━━━━━<br/>Attack: Trigger mass reconnect<br/>to overwhelm backend<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Exponential backoff<br/>• Jittered retry timing<br/>• Circuit breaker pattern"]
+        end
+    end
+
+    subgraph BackendLayer["⚙️ Backend Layer Attack Surface"]
+        direction TB
+        
+        subgraph R1["📝 REPUDIATION THREATS"]
+            R1_1["R1.1 - Log Entry Denial<br/>━━━━━━━━━━━━━━<br/>Attack: Client claims they<br/>never submitted entry<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Signed queue entries<br/>• Consent audit trail (G15)<br/>• Non-repudiable timestamps"]
+            
+            R1_2["R1.2 - Therapist Action Denial<br/>━━━━━━━━━━━━━━<br/>Attack: Therapist denies<br/>approving/viewing notes<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Immutable audit log<br/>• Actor identification<br/>• Session recording"]
+            
+            R1_3["R1.3 - Admin Privilege Abuse<br/>━━━━━━━━━━━━━━<br/>Attack: Admin modifies<br/>records without trace<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Separate audit DB<br/>• Dual-control for changes<br/>• SIEM integration"]
+        end
+        
+        subgraph E1["⬆️ ELEVATION OF PRIVILEGE"]
+            E1_1["E1.1 - RBAC Bypass<br/>━━━━━━━━━━━━━━<br/>Attack: Client accesses<br/>therapist-only endpoints<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• JWT role claims<br/>• Server-side RBAC checks<br/>• Principle of least privilege"]
+            
+            E1_2["E1.2 - Cross-Client Access<br/>━━━━━━━━━━━━━━<br/>Attack: Client A reads<br/>Client B's mood entries<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Row-level security<br/>• Client ID in JWT<br/>• Query parameterization"]
+            
+            E1_3["E1.3 - JWT Token Forgery<br/>━━━━━━━━━━━━━━<br/>Attack: Craft token with<br/>elevated privileges<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• RS256 asymmetric signing<br/>• Key rotation policy<br/>• Token expiry (15 min)"]
+        end
+    end
+
+    subgraph DataLayer["🗄️ Data Layer Attack Surface"]
+        direction TB
+        
+        subgraph I2["🔓 DATA DISCLOSURE"]
+            I2_1["I2.1 - Database Breach<br/>━━━━━━━━━━━━━━<br/>Attack: SQL injection or<br/>direct DB access<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Parameterized queries<br/>• Encryption at rest (AES-256)<br/>• Network segmentation"]
+            
+            I2_2["I2.2 - Backup Exposure<br/>━━━━━━━━━━━━━━<br/>Attack: Unencrypted backups<br/>stolen or leaked<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Encrypted backups<br/>• Separate backup keys<br/>• Secure backup storage"]
+            
+            I2_3["I2.3 - Log Aggregation Leak<br/>━━━━━━━━━━━━━━<br/>Attack: PHI appears in<br/>application logs<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• PHI scrubbing in logs<br/>• Log access controls<br/>• Retention limits"]
+        end
+        
+        subgraph T2["✏️ DATA TAMPERING"]
+            T2_1["T2.1 - Record Modification<br/>━━━━━━━━━━━━━━<br/>Attack: Alter historical<br/>mood/CBT records<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Append-only design<br/>• Version history<br/>• Cryptographic hashing"]
+            
+            T2_2["T2.2 - Audit Log Deletion<br/>━━━━━━━━━━━━━━<br/>Attack: Remove evidence<br/>of malicious activity<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Write-once audit storage<br/>• Off-site replication<br/>• Tamper-evident logging"]
+        end
+    end
+
+    subgraph ClinicalSafety["🏥 Clinical Safety Attack Surface"]
+        direction TB
+        
+        subgraph CS1["⚠️ SAFETY-CRITICAL THREATS"]
+            CS1_1["CS1.1 - Emergency Suppression<br/>━━━━━━━━━━━━━━<br/>Attack: Block crisis indicators<br/>from reaching therapist<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Priority queue for safety<br/>• Redundant notification paths<br/>• Automated escalation (G17)"]
+            
+            CS1_2["CS1.2 - False Practitioner<br/>━━━━━━━━━━━━━━<br/>Attack: Unlicensed person<br/>provides clinical guidance<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Credential verification (G16)<br/>• License expiry monitoring<br/>• Regulatory API integration"]
+        end
+    end
+
+    %% Connections showing attack flow
+    S1 --> TransportLayer
+    T1 --> TransportLayer
+    TransportLayer --> BackendLayer
+    BackendLayer --> DataLayer
+    BackendLayer --> ClinicalSafety
+
+    %% Styling
+    classDef spoofing fill:#dc3545,stroke:#a71d2a,stroke-width:2px,color:#fff
+    classDef tampering fill:#fd7e14,stroke:#c96209,stroke-width:2px,color:#fff
+    classDef repudiation fill:#6f42c1,stroke:#5a32a3,stroke-width:2px,color:#fff
+    classDef disclosure fill:#0dcaf0,stroke:#0aa2c0,stroke-width:2px,color:#000
+    classDef dos fill:#6c757d,stroke:#545b62,stroke-width:2px,color:#fff
+    classDef elevation fill:#198754,stroke:#146c43,stroke-width:2px,color:#fff
+    classDef clinical fill:#d63384,stroke:#ab296a,stroke-width:2px,color:#fff
+    classDef legend fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px
+
+    class S1,S1_1,S1_2,S1_3 spoofing
+    class T1,T1_1,T1_2,T1_3,T2,T2_1,T2_2 tampering
+    class R1,R1_1,R1_2,R1_3 repudiation
+    class I1,I1_1,I1_2,I1_3,I2,I2_1,I2_2,I2_3 disclosure
+    class D1,D1_1,D1_2,D1_3 dos
+    class E1,E1_1,E1_2,E1_3 elevation
+    class CS1,CS1_1,CS1_2 clinical
+    class Legend,S,T,R,I,D,E legend

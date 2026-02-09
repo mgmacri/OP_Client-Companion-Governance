@@ -1,0 +1,156 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#6f42c1', 'primaryTextColor': '#fff', 'primaryBorderColor': '#5a32a3', 'lineColor': '#6c757d', 'secondaryColor': '#20c997', 'tertiaryColor': '#e83e8c'}}}%%
+
+flowchart TB
+    subgraph Title["🔐 LINDDUN Privacy Threat Model - Mental Health Client Companion"]
+        direction TB
+    end
+
+    subgraph Legend["📚 LINDDUN Categories"]
+        direction LR
+        L["🔗 L - Linkability<br/>Correlating data"]
+        I["👤 I - Identifiability<br/>Identifying subjects"]
+        NR["🚫 NR - Non-Repudiation<br/>Cannot deny actions"]
+        De["🔍 De - Detectability<br/>Existence inference"]
+        Di["📤 Di - Disclosure<br/>Information exposure"]
+        U["❓ U - Unawareness<br/>Lack of transparency"]
+        NC["⚖️ NC - Non-Compliance<br/>Regulatory violations"]
+    end
+
+    subgraph DataSubjects["👥 Data Subjects & PHI Types"]
+        direction TB
+        
+        Client["👤 Client (Patient)<br/>━━━━━━━━━━━━━━<br/>PHI Collected:<br/>• Mood ratings (1-10)<br/>• Emotions & triggers<br/>• CBT thought records<br/>• Sleep patterns<br/>• Anxiety episodes<br/>• Safety notes"]
+        
+        Therapist["👨‍⚕️ Therapist<br/>━━━━━━━━━━━━━━<br/>Data Collected:<br/>• Professional credentials<br/>• Client interactions<br/>• Review timestamps<br/>• Approval decisions"]
+    end
+
+    subgraph LinkabilityThreats["🔗 LINKABILITY THREATS"]
+        direction TB
+        
+        L1["L1 - Cross-Log Correlation<br/>━━━━━━━━━━━━━━<br/>Threat: Link mood entries to<br/>sleep logs to CBT records<br/>to build behavioral profile<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Purpose limitation (G3)<br/>• Separate access controls<br/>• Data minimization"]
+        
+        L2["L2 - Therapist-Client Linking<br/>━━━━━━━━━━━━━━<br/>Threat: Infer therapeutic<br/>relationships from access<br/>patterns<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Access log protection<br/>• Aggregate reporting only<br/>• Time-delayed analytics"]
+        
+        L3["L3 - Device Fingerprinting<br/>━━━━━━━━━━━━━━<br/>Threat: Track user across<br/>sessions via device ID<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Rotating device tokens<br/>• No persistent identifiers<br/>• Privacy-preserving auth"]
+        
+        L4["L4 - Temporal Correlation<br/>━━━━━━━━━━━━━━<br/>Threat: Link entries via<br/>logged_at_local timestamps<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: LOW<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Timestamp rounding<br/>• Batch submissions<br/>• Noise injection"]
+    end
+
+    subgraph IdentifiabilityThreats["👤 IDENTIFIABILITY THREATS"]
+        direction TB
+        
+        I1["I1 - Direct Identification<br/>━━━━━━━━━━━━━━<br/>Threat: Client ID in logs<br/>directly identifies patient<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: CRITICAL<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Pseudonymization (G11)<br/>• UUID vs natural keys<br/>• Key separation"]
+        
+        I2["I2 - Quasi-Identifier Attack<br/>━━━━━━━━━━━━━━<br/>Threat: Combine mood + sleep +<br/>location to re-identify<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• k-anonymity for exports<br/>• Generalization<br/>• No location collection"]
+        
+        I3["I3 - Free-Text Re-identification<br/>━━━━━━━━━━━━━━<br/>Threat: Notes/triggers contain<br/>identifying information<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• NER-based scrubbing<br/>• User education<br/>• Therapist review gate"]
+        
+        I4["I4 - Metadata Identification<br/>━━━━━━━━━━━━━━<br/>Threat: IP address, user-agent<br/>in access logs<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• IP anonymization<br/>• Minimal logging<br/>• Log retention limits"]
+    end
+
+    subgraph NonRepudiationThreats["🚫 NON-REPUDIATION THREATS"]
+        direction TB
+        
+        NR1["NR1 - Undeniable Mental State<br/>━━━━━━━━━━━━━━<br/>Threat: Client cannot deny<br/>recorded mood/anxiety states<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Context: May be required<br/>for clinical validity<br/>━━━━━━━━━━━━━━<br/>Balance:<br/>• Consent explains permanence<br/>• Correction rights (G5)<br/>• Retention limits (G8)"]
+        
+        NR2["NR2 - Consent Non-Repudiation<br/>━━━━━━━━━━━━━━<br/>Threat: Immutable consent<br/>record proves agreement<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Context: Required for<br/>legal compliance<br/>━━━━━━━━━━━━━━<br/>Balance:<br/>• Clear consent language<br/>• Withdrawal capability<br/>• Version tracking"]
+        
+        NR3["NR3 - Therapist Activity Proof<br/>━━━━━━━━━━━━━━<br/>Threat: Audit logs prove<br/>therapist access patterns<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Balance:<br/>• Professional necessity<br/>• Access to own logs<br/>• Proportionate retention"]
+    end
+
+    subgraph DetectabilityThreats["🔍 DETECTABILITY THREATS"]
+        direction TB
+        
+        De1["De1 - Existence Inference<br/>━━━━━━━━━━━━━━<br/>Threat: Infer someone uses<br/>mental health app from<br/>network traffic patterns<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Traffic padding<br/>• Generic API endpoints<br/>• CDN/proxy obfuscation"]
+        
+        De2["De2 - Treatment Detection<br/>━━━━━━━━━━━━━━<br/>Threat: Frequency of entries<br/>reveals treatment intensity<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Dummy traffic generation<br/>• Batch sync windows<br/>• Encrypted sync metadata"]
+        
+        De3["De3 - Crisis Detection<br/>━━━━━━━━━━━━━━<br/>Threat: Spike in submissions<br/>indicates crisis episode<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Rate limiting hides spikes<br/>• Queue smoothing<br/>• End-to-end encryption"]
+    end
+
+    subgraph DisclosureThreats["📤 DISCLOSURE OF INFORMATION"]
+        direction TB
+        
+        Di1["Di1 - Unauthorized PHI Access<br/>━━━━━━━━━━━━━━<br/>Threat: Breach exposes<br/>mood/CBT/sleep records<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: CRITICAL<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Encryption at rest (G6)<br/>• Access controls (G4)<br/>• Breach response (G7)"]
+        
+        Di2["Di2 - Insider Threat<br/>━━━━━━━━━━━━━━<br/>Threat: Employee/admin<br/>accesses client records<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: CRITICAL<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Need-to-know access<br/>• Audit logging (G15)<br/>• Background checks"]
+        
+        Di3["Di3 - Third-Party Disclosure<br/>━━━━━━━━━━━━━━<br/>Threat: Cloud provider or<br/>subprocessor accesses data<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• DPA agreements (G9)<br/>• Encryption key control<br/>• Canadian data residency (G10)"]
+        
+        Di4["Di4 - Analytics Leakage<br/>━━━━━━━━━━━━━━<br/>Threat: Aggregate reports<br/>reveal individual patterns<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Differential privacy<br/>• Minimum group sizes<br/>• De-identification (G11)"]
+    end
+
+    subgraph UnawarenessThreats["❓ UNAWARENESS THREATS"]
+        direction TB
+        
+        U1["U1 - Opaque Data Processing<br/>━━━━━━━━━━━━━━<br/>Threat: Client unaware how<br/>their PHI is processed<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Clear privacy notice (G2)<br/>• Purpose specification (G3)<br/>• Layered consent UI"]
+        
+        U2["U2 - Hidden Data Collection<br/>━━━━━━━━━━━━━━<br/>Threat: Metadata collected<br/>without explicit notice<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Complete data inventory (G1)<br/>• Transparent collection<br/>• Consent for all data types"]
+        
+        U3["U3 - Unknown Retention<br/>━━━━━━━━━━━━━━<br/>Threat: Client doesn't know<br/>how long data is kept<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Published retention policy (G8)<br/>• Deletion confirmation<br/>• Retention reminders"]
+        
+        U4["U4 - Access Unawareness<br/>━━━━━━━━━━━━━━<br/>Threat: Client unaware who<br/>has accessed their records<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: MEDIUM<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Access notification<br/>• Disclosure accounting (G5)<br/>• Audit log access"]
+    end
+
+    subgraph NonComplianceThreats["⚖️ NON-COMPLIANCE THREATS"]
+        direction TB
+        
+        NC1["NC1 - Provincial PHI Violations<br/>━━━━━━━━━━━━━━<br/>Threat: Fail to meet PHIPA,<br/>HIA, PHIA requirements<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: CRITICAL<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Compliance gates (G1-G17)<br/>• Legal review<br/>• Regular audits"]
+        
+        NC2["NC2 - Cross-Border Violations<br/>━━━━━━━━━━━━━━<br/>Threat: Data stored/processed<br/>outside Canada without<br/>proper safeguards<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Canadian data residency (G10)<br/>• Adequacy assessments<br/>• Consent for transfers"]
+        
+        NC3["NC3 - Consent Deficiencies<br/>━━━━━━━━━━━━━━<br/>Threat: Invalid or incomplete<br/>consent for PHI processing<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: CRITICAL<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Consent validation (G2)<br/>• Version tracking<br/>• Re-consent workflows"]
+        
+        NC4["NC4 - Rights Violations<br/>━━━━━━━━━━━━━━<br/>Threat: Fail to honor access,<br/>correction, deletion requests<br/>━━━━━━━━━━━━━━<br/>Privacy Impact: HIGH<br/>━━━━━━━━━━━━━━<br/>Mitigation:<br/>• Rights portal (G5)<br/>• SLA for responses<br/>• Automated workflows"]
+    end
+
+    subgraph DataFlowPrivacy["🔄 Privacy in Data Flow"]
+        direction LR
+        
+        Collection["📝 Collection<br/>━━━━━━━━━━━<br/>Risks: U1, U2, NC3<br/>Controls: G1, G2, G3"]
+        
+        Processing["⚙️ Processing<br/>━━━━━━━━━━━<br/>Risks: L1, I3, De2<br/>Controls: G4, G11"]
+        
+        Storage["💾 Storage<br/>━━━━━━━━━━━<br/>Risks: Di1, Di2, I1<br/>Controls: G6, G8"]
+        
+        Disclosure["📤 Disclosure<br/>━━━━━━━━━━━<br/>Risks: Di3, NC2, L2<br/>Controls: G4, G9, G10"]
+        
+        Collection --> Processing
+        Processing --> Storage
+        Storage --> Disclosure
+    end
+
+    %% Connect subjects to threats
+    Client --> LinkabilityThreats
+    Client --> IdentifiabilityThreats
+    Client --> UnawarenessThreats
+    Therapist --> NonRepudiationThreats
+    
+    LinkabilityThreats --> DataFlowPrivacy
+    IdentifiabilityThreats --> DataFlowPrivacy
+    DetectabilityThreats --> DataFlowPrivacy
+    DisclosureThreats --> DataFlowPrivacy
+    NonComplianceThreats --> DataFlowPrivacy
+
+    %% Styling
+    classDef linkability fill:#6f42c1,stroke:#5a32a3,stroke-width:2px,color:#fff
+    classDef identifiability fill:#e83e8c,stroke:#c22d73,stroke-width:2px,color:#fff
+    classDef nonrepudiation fill:#fd7e14,stroke:#c96209,stroke-width:2px,color:#fff
+    classDef detectability fill:#20c997,stroke:#19a07a,stroke-width:2px,color:#fff
+    classDef disclosure fill:#dc3545,stroke:#a71d2a,stroke-width:2px,color:#fff
+    classDef unawareness fill:#0dcaf0,stroke:#0aa2c0,stroke-width:2px,color:#000
+    classDef noncompliance fill:#6c757d,stroke:#545b62,stroke-width:2px,color:#fff
+    classDef dataflow fill:#198754,stroke:#146c43,stroke-width:2px,color:#fff
+    classDef subject fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#000
+    classDef legend fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px
+
+    class L1,L2,L3,L4,LinkabilityThreats linkability
+    class I1,I2,I3,I4,IdentifiabilityThreats identifiability
+    class NR1,NR2,NR3,NonRepudiationThreats nonrepudiation
+    class De1,De2,De3,DetectabilityThreats detectability
+    class Di1,Di2,Di3,Di4,DisclosureThreats disclosure
+    class U1,U2,U3,U4,UnawarenessThreats unawareness
+    class NC1,NC2,NC3,NC4,NonComplianceThreats noncompliance
+    class Collection,Processing,Storage,Disclosure,DataFlowPrivacy dataflow
+    class Client,Therapist,DataSubjects subject
+    class Legend,L,I,NR,De,Di,U,NC legend

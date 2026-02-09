@@ -2548,4 +2548,3 @@ document_control:
         POL-G09-001, POL-G02-001. Added runbooks: OPS-RUNBOOK-004 (Practitioner Verification Playbook),
         OPS-RUNBOOK-005 (Practitioner Suspension Playbook). Includes provincial registry URLs for 
         credential verification.
-      description: "Initial release"
