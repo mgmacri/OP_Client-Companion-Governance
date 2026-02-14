@@ -1,6 +1,6 @@
 # OP_Client-Companion-Governance
 
-> Centralized governance, reusable workflows, and compliance standards for Clinical/Personal Therapy Companion projects.
+> Centralized governance and controls-as-code for regulated/sensitive-data software projects.
 
 [![CI](https://github.com/mgmacri/OP_Client-Companion-Governance/actions/workflows/ci.yml/badge.svg)](https://github.com/mgmacri/OP_Client-Companion-Governance/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
